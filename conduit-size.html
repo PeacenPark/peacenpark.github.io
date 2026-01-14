@@ -570,7 +570,7 @@
             <select id="type" onchange="updateSizeOptions(); updateExternalDiameter();">
               <option value="F-CV">F-CV</option>
               <option value="HFIX">HFIX</option>
-              <option value="F-GV">F-GV</option>
+              <option value="GV">GV</option>
               <option value="TFR-CV">TFR-CV (고압용)</option>
               <option value="CN/CV(CO)">CN/CV(CO) (고압용)</option>
             </select>
@@ -635,16 +635,14 @@
           <div class="field">
             <label>전선관 종류</label>
             <select id="pipeType" onchange="updateConduitSizes()">
-  <option value="">선택</option>
-  <option value="ELP">ELP관</option>
-  <option value="CD_PE">CD/PE관</option>
-  <option value="HI">HI관</option>
-  <option value="STEEL">스틸관</option>
-  <option value="GW">GW관</option>
-  <option value="NONTHREAD">무나사 전선관</option>
-  <option value="TRAY">케이블 트레이</option>
-  <option value="DUCT">덕트</option>
-</select>
+              <option value="">선택</option>
+              <option value="ELP">ELP관</option>
+              <option value="CD_PE">CD/PE관</option>
+              <option value="HI">HI관</option>
+              <option value="STEEL">스틸/GW관</option>
+              <option value="TRAY">케이블 트레이</option>
+              <option value="DUCT">덕트</option>
+            </select>
           </div>
           <div class="field">
             <label>전선관 사이즈</label>
@@ -761,7 +759,7 @@ const cableDiameters = {
     '150': { '1': 43.0 }, '200': { '1': 45.0 }, '250': { '1': 48.0 },
     '325': { '1': 51.0 }, '400': { '1': 55.0 }, '500': { '1': 57.0 }, '600': { '1': 61.0 }
   },
-  'F-GV': {
+  'GV': {
     '2.5': { '1': 9.0 }, '4': { '1': 10.0 }, '6': { '1': 11.0 },
     '10': { '1': 13.0 }, '16': { '1': 15.0 }, '25': { '1': 17.0 },
     '35': { '1': 18.5 }, '50': { '1': 20.5 }, '70': { '1': 24.0 },
@@ -772,14 +770,12 @@ const cableDiameters = {
 
 // 전선관 채움률 제한 (수정된 값)
 const fillLimit = {
-  'ELP': 33.3,
-  'CD_PE': 33.3,
-  'HI': 33.3,
-  'STEEL': 33.3,
-  'GW': 33.3,        // 추가
-  'NONTHREAD': 33.3, // 추가
-  'TRAY': 100,
-  'DUCT': 20
+  'ELP': 33.3,     // 일반 전선관은 1/3 (33.3%) 이내만 적합
+  'CD_PE': 33.3,   // 일반 전선관은 1/3 (33.3%) 이내만 적합
+  'HI': 33.3,      // 일반 전선관은 1/3 (33.3%) 이내만 적합
+  'STEEL': 33.3,   // 일반 전선관은 1/3 (33.3%) 이내만 적합
+  'TRAY': 100,     // 트레이는 100% 이내는 적합
+  'DUCT': 20       // 덕트는 20% 이내만 적합
 };
 
 // 케이블 트레이 너비 규격
@@ -836,46 +832,26 @@ const generalConduits = {
     { name: '42호', area: 1385, innerDia: 42.0 }
   ],
   'HI': [
-    { name: 'HI-16', area: 254, innerDia: 18.0 },
-    { name: 'HI-22', area: 380, innerDia: 22.0 },
-    { name: 'HI-28', area: 615, innerDia: 28.0 },
-    { name: 'HI-36', area: 962, innerDia: 35.0 },
-    { name: 'HI-42', area: 1256, innerDia: 40.0 },
-    { name: 'HI-54', area: 2042, innerDia: 51.0 },
-    { name: 'HI-70', area: 3524, innerDia: 67.0 },
-    { name: 'HI-82', area: 4678, innerDia: 77.2 },
-    { name: 'HI-100', area: 7850, innerDia: 100.0 }
+    { name: '16호', area: 254, innerDia: 18.0 },
+    { name: '22호', area: 380, innerDia: 22.0 },
+    { name: '28호', area: 615, innerDia: 28.0 },
+    { name: '36호', area: 962, innerDia: 35.0 },
+    { name: '42호', area: 1256, innerDia: 40.0 },
+    { name: '54호', area: 2042, innerDia: 51.0 },
+    { name: '70호', area: 3524, innerDia: 67.0 },
+    { name: '82호', area: 4678, innerDia: 77.2 },
+    { name: '100호', area: 7850, innerDia: 100.0 }
   ],
   'STEEL': [
-    { name: 'G16', area: 211, innerDia: 16.4 },
-    { name: 'G22', area: 376, innerDia: 21.9 },
-    { name: 'G28', area: 629, innerDia: 28.3 },
-    { name: 'G36', area: 1069, innerDia: 36.9 },
-    { name: 'G42', area: 1438, innerDia: 42.8 },
-    { name: 'G54', area: 2289, innerDia: 54.0 },
-    { name: 'G70', area: 3803, innerDia: 69.6 },
-    { name: 'G82', area: 5317, innerDia: 82.3 },
-    { name: 'G104', area: 8887, innerDia: 106.4 }
-  ],
-  'GW': [
-    { name: 'AFGW16', area: 196, innerDia: 15.8 },
-    { name: 'AFGW22', area: 340, innerDia: 20.9 },
-    { name: 'AFGW28', area: 547, innerDia: 26.4 },
-    { name: 'AFGW36', area: 962, innerDia: 35.0 },
-    { name: 'AFGW42', area: 1257, innerDia: 40.0 },
-    { name: 'AFGW54', area: 2067, innerDia: 51.3 },
-    { name: 'AFGW70', area: 3107, innerDia: 62.9 },
-    { name: 'AFGW82', area: 4766, innerDia: 77.9 },
-    { name: 'AFGW104', area: 8107, innerDia: 101.6 }
-  ],
-  'NONTHREAD': [
-    { name: 'E19', area: 219, innerDia: 16.7 },
-    { name: 'E25', area: 415, innerDia: 23.0 },
-    { name: 'E31', area: 660, innerDia: 29.0 },
-    { name: 'E39', area: 979, innerDia: 35.3 },
-    { name: 'E51', area: 1810, innerDia: 48.0 },
-    { name: 'E63', area: 2856, innerDia: 60.3 },
-    { name: 'E75', area: 4140, innerDia: 72.6 }
+    { name: '16호', area: 211, innerDia: 16.4 },
+    { name: '22호', area: 376, innerDia: 21.9 },
+    { name: '28호', area: 629, innerDia: 28.3 },
+    { name: '36호', area: 1069, innerDia: 36.9 },
+    { name: '42호', area: 1438, innerDia: 42.8 },
+    { name: '54호', area: 2289, innerDia: 54.0 },
+    { name: '70호', area: 3803, innerDia: 69.6 },
+    { name: '82호', area: 5317, innerDia: 82.3 },
+    { name: '104호', area: 8887, innerDia: 106.4 }
   ]
 };
 
@@ -1079,8 +1055,8 @@ function updateSizeOptions() {
     coreSelect.innerHTML = `<option value="1">1C</option><option value="3">3C</option>`;
     coreSelect.disabled = false;
   }
-  // HFIX, CN/CV(CO), F-GV는 Core가 항상 1C로 고정됨
-  else if (type === "HFIX" || type === "CN/CV(CO)" || type === "F-GV") {
+  // HFIX, CN/CV(CO), GV는 Core가 항상 1C로 고정됨
+  else if (type === "HFIX" || type === "CN/CV(CO)" || type === "GV") {
     coreSelect.innerHTML = `<option value="1">1C</option>`;
     coreSelect.disabled = true;
   } else {
@@ -1388,24 +1364,26 @@ function findBalancedCombo(values, required) {
   // 2개 이상의 조합이 필요한 경우
   // 최대 조합 수 제한 (최대 4개까지만 조합)
   for (let count = 2; count <= 4; count++) {
-    // 모든 가능한 조합 생성
-    const combos = getCombinations(values, count);
+    // 모든 가능한 조합 생성 (중복 허용)
+    const combos = getCombinationsWithReplacement(values, count);
     
     // 요구사항을 만족하는 조합 필터링
     const validCombos = combos.filter(c => c.reduce((a, b) => a + b, 0) >= required);
     
     if (validCombos.length > 0) {
-      // 균등성 기준으로 정렬 (균등한 조합 선호)
+      // 총합 우선, 그 다음 균등성 기준으로 정렬
       validCombos.sort((a, b) => {
-        // 최대값과 최소값의 차이로 균등성 측정
-        const uniformityA = Math.max(...a) - Math.min(...a);
-        const uniformityB = Math.max(...b) - Math.min(...b);
+        const sumA = a.reduce((x, y) => x + y, 0);
+        const sumB = b.reduce((x, y) => x + y, 0);
         
-        // 균등성이 같으면 총합이 작은 것 선호
-        if (uniformityA === uniformityB) {
-          return a.reduce((x, y) => x + y, 0) - b.reduce((x, y) => x + y, 0);
+        // 총합이 작은 것 우선 (최소 조합)
+        if (sumA !== sumB) {
+          return sumA - sumB;
         }
         
+        // 총합이 같으면 균등한 조합 선호
+        const uniformityA = Math.max(...a) - Math.min(...a);
+        const uniformityB = Math.max(...b) - Math.min(...b);
         return uniformityA - uniformityB;
       });
       
@@ -1417,13 +1395,14 @@ function findBalancedCombo(values, required) {
   return null;
 }
 
-// 모든 가능한 조합 생성
-function getCombinations(arr, len) {
+// 중복을 허용하는 조합 생성 (combination with replacement)
+function getCombinationsWithReplacement(arr, len) {
   if (len === 1) return arr.map(v => [v]);
   
   const result = [];
-  for (let i = 0; i <= arr.length - len; i++) {
-    const rest = getCombinations(arr.slice(i + 1), len - 1);
+  for (let i = 0; i < arr.length; i++) {
+    // 현재 요소 포함, 현재 위치부터 다시 선택 가능 (중복 허용)
+    const rest = getCombinationsWithReplacement(arr.slice(i), len - 1);
     rest.forEach(r => result.push([arr[i], ...r]));
   }
   
