@@ -1,4 +1,4 @@
-const CACHE_NAME = 'electric-calculator-v7';
+const CACHE_NAME = 'electric-calculator-v5';
 const urlsToCache = [
   '/icons/IMG_1900.png',
   '/icons/IMG_1901.png',
@@ -17,6 +17,9 @@ const urlsToCache = [
 
 // 서비스 워커 설치 및 캐시 파일 선정
 self.addEventListener('install', function(event) {
+  // 즉시 활성화
+  self.skipWaiting();
+  
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(function(cache) {
@@ -74,6 +77,7 @@ self.addEventListener('fetch', function(event) {
 self.addEventListener('activate', function(event) {
   const cacheWhitelist = [CACHE_NAME];
   
+  // 즉시 클라이언트 제어
   event.waitUntil(
     caches.keys().then(function(cacheNames) {
       return Promise.all(
@@ -83,6 +87,8 @@ self.addEventListener('activate', function(event) {
           }
         })
       );
+    }).then(function() {
+      return self.clients.claim();
     })
   );
 });
