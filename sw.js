@@ -1,9 +1,9 @@
-const CACHE_NAME = 'electric-calculator-v4';
+const CACHE_NAME = 'electric-calculator-v5';
 const urlsToCache = [
-  '/',
-  '/index.html',
   '/icons/IMG_1900.png',
   '/icons/IMG_1901.png',
+  '/icons/icon-192x192.png',
+  '/icons/icon-512x512.png',
   '/icons/product1.jpg',
   '/icons/product2.jpg',
   '/manifest.json',
@@ -28,6 +28,16 @@ self.addEventListener('install', function(event) {
 
 // 캐시 또는 네트워크에서 리소스 가져오기
 self.addEventListener('fetch', function(event) {
+  // index.html은 항상 네트워크에서 최신 버전 가져오기
+  if (event.request.url.includes('index.html') || event.request.url.endsWith('/')) {
+    event.respondWith(
+      fetch(event.request).catch(function() {
+        return caches.match(event.request);
+      })
+    );
+    return;
+  }
+  
   event.respondWith(
     caches.match(event.request)
       .then(function(response) {
