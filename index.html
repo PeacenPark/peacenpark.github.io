@@ -547,11 +547,11 @@
         
         <!-- 알리익스프레스 제품 링크 -->
         <div class="affiliate-products">
-          <a href="https://s.click.aliexpress.com/e/_c3IsIG19" target="_blank" rel="noopener" class="product-link">
-            <img src="./icons/product1.jpg" alt="멀티테스터기" class="product-image">
-            <span class="product-text">멀티테스터</span>
-          </a>
           <a href="https://s.click.aliexpress.com/e/_c3VFX1CR" target="_blank" rel="noopener" class="product-link">
+            <img src="./icons/product1.jpg" alt="멀티테스터기" class="product-image">
+            <span class="product-text">멀티테스터기</span>
+          </a>
+          <a href="https://s.click.aliexpress.com/e/_c3IsIG19" target="_blank" rel="noopener" class="product-link">
             <img src="./icons/product2.jpg" alt="절연저항계" class="product-image">
             <span class="product-text">절연저항계</span>
           </a>
@@ -714,9 +714,26 @@
   
 <script>
   if ('serviceWorker' in navigator) {
+    // 기존 Service Worker 모두 제거
+    navigator.serviceWorker.getRegistrations().then(function(registrations) {
+      for(let registration of registrations) {
+        registration.unregister();
+      }
+    });
+    
+    // 캐시 모두 삭제
+    caches.keys().then(function(names) {
+      for (let name of names) {
+        caches.delete(name);
+      }
+    });
+    
+    // 새로운 Service Worker 등록
     navigator.serviceWorker.register('/sw.js')
       .then(function(reg) {
         console.log('서비스 워커 등록 성공:', reg.scope);
+        // 즉시 활성화
+        reg.update();
       }).catch(function(error) {
         console.log('서비스 워커 등록 실패:', error);
       });
