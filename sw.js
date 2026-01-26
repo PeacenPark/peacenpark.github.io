@@ -1,4 +1,4 @@
-const CACHE_NAME = 'electric-calculator-v6';
+const CACHE_NAME = 'electric-calculator-v7';
 const urlsToCache = [
   '/icons/IMG_1900.png',
   '/icons/IMG_1901.png',
