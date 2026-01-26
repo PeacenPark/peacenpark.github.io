@@ -47,8 +47,136 @@
     
     .header-content {
       display: flex;
-      justify-content: space-between;
       align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+    
+    .logo {
+      display: flex;
+      align-items: center;
+      text-decoration: none;
+      color: var(--primary-color);
+    }
+    
+    .logo i {
+      font-size: 28px;
+      margin-right: 10px;
+    }
+    
+    .logo-text {
+      font-weight: bold;
+      font-size: 20px;
+      color: #1e3a5f;
+    }
+    
+    /* 알리익스프레스 제품 링크 */
+    .affiliate-products {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      margin-left: auto;
+    }
+    
+    .product-link {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: white;
+      border-radius: 10px;
+      text-decoration: none;
+      color: #333;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+      border: 2px solid transparent;
+    }
+    
+    .product-link:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 4px 15px rgba(74, 144, 226, 0.25);
+      border-color: var(--primary-color);
+      background: #f8fbff;
+    }
+    
+    .product-image {
+      width: 45px;
+      height: 45px;
+      object-fit: contain;
+      border-radius: 6px;
+    }
+    
+    .product-text {
+      white-space: nowrap;
+      color: #1e3a5f;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    
+    @media (max-width: 768px) {
+      .header-content {
+        gap: 10px;
+      }
+      
+      .logo i {
+        font-size: 24px;
+        margin-right: 8px;
+      }
+      
+      .logo-text {
+        font-size: 16px;
+      }
+      
+      .affiliate-products {
+        gap: 8px;
+      }
+      
+      .product-link {
+        padding: 5px 8px;
+      }
+      
+      .product-image {
+        width: 35px;
+        height: 35px;
+      }
+      
+      .product-text {
+        font-size: 15px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .header-content {
+        gap: 8px;
+      }
+      
+      .logo i {
+        font-size: 20px;
+        margin-right: 6px;
+      }
+      
+      .logo-text {
+        font-size: 14px;
+      }
+      
+      .affiliate-products {
+        gap: 6px;
+      }
+      
+      .product-link {
+        padding: 4px 6px;
+      }
+      
+      .product-image {
+        width: 30px;
+        height: 30px;
+      }
+      
+      .product-text {
+        font-size: 10px;
+      }
     }
     
     .logo {
@@ -412,6 +540,18 @@
           <i class="fas fa-bolt"></i>
           <span class="logo-text">전기(공사) 계산기</span>
         </a>
+        
+        <!-- 알리익스프레스 제품 링크 -->
+        <div class="affiliate-products">
+          <a href="https://s.click.aliexpress.com/e/_c3VFX1CR" target="_blank" rel="noopener" class="product-link">
+            <img src="icons/product1.jpg" alt="멀티테스터기" class="product-image">
+            <span class="product-text">멀티테스터기</span>
+          </a>
+          <a href="https://s.click.aliexpress.com/e/_c3IsIG19" target="_blank" rel="noopener" class="product-link">
+            <img src="icons/product2.jpg" alt="절연저항계" class="product-image">
+            <span class="product-text">절연저항계(메거)</span>
+          </a>
+        </div>
       </div>
     </div>
   </header>
