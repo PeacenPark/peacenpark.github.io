@@ -72,18 +72,20 @@
     
     /* 알리익스프레스 제품 링크 */
     .affiliate-products {
-      display: flex;
+      display: flex !important;
       gap: 15px;
       align-items: center;
       margin-left: auto;
+      visibility: visible !important;
+      opacity: 1 !important;
     }
     
     .product-link {
-      display: flex;
+      display: flex !important;
       align-items: center;
       gap: 8px;
       padding: 8px 12px;
-      background: white;
+      background: #fff;
       border-radius: 10px;
       text-decoration: none;
       color: #333;
@@ -91,7 +93,9 @@
       font-weight: 600;
       transition: all 0.3s ease;
       box-shadow: 0 2px 8px rgba(0,0,0,0.12);
-      border: 2px solid transparent;
+      border: 2px solid #e0e0e0;
+      visibility: visible !important;
+      opacity: 1 !important;
     }
     
     .product-link:hover {
@@ -143,7 +147,7 @@
       }
       
       .product-text {
-        font-size: 15px;
+        font-size: 11px;
       }
     }
     
@@ -544,12 +548,12 @@
         <!-- 알리익스프레스 제품 링크 -->
         <div class="affiliate-products">
           <a href="https://s.click.aliexpress.com/e/_c3VFX1CR" target="_blank" rel="noopener" class="product-link">
-            <img src="icons/product1.jpg" alt="멀티테스터기" class="product-image">
+            <img src="./icons/product1.jpg" alt="멀티테스터기" class="product-image">
             <span class="product-text">멀티테스터기</span>
           </a>
           <a href="https://s.click.aliexpress.com/e/_c3IsIG19" target="_blank" rel="noopener" class="product-link">
-            <img src="icons/product2.jpg" alt="절연저항계" class="product-image">
-            <span class="product-text">절연저항계(메거)</span>
+            <img src="./icons/product2.jpg" alt="절연저항계" class="product-image">
+            <span class="product-text">절연저항계</span>
           </a>
         </div>
       </div>
