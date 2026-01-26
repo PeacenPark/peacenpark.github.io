@@ -1,9 +1,11 @@
-const CACHE_NAME = 'electric-calculator-v3';
+const CACHE_NAME = 'electric-calculator-v4';
 const urlsToCache = [
   '/',
   '/index.html',
   '/icons/IMG_1900.png',
   '/icons/IMG_1901.png',
+  '/icons/product1.jpg',
+  '/icons/product2.jpg',
   '/manifest.json',
   // 계산기 페이지들
   '/cable2.html',
