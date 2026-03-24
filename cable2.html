@@ -612,6 +612,7 @@
           <div class="tab active" data-tab="basic">기본 계산</div>
           <div class="tab" data-tab="voltage-drop">전압 강하</div>
           <div class="tab" data-tab="compare">케이블 선정</div>
+          <div class="tab" data-tab="breaker-wire">차단기↔전선</div>
           <div class="tab" data-tab="saved">저장된 설정</div>
         </div>
         
@@ -948,6 +949,128 @@
           </div>
         </div>
         
+        <!-- 차단기↔전선 상호 선정 탭 -->
+        <div class="tab-content" id="breaker-wire-tab">
+          <!-- 모드 선택 -->
+          <div style="display:flex;gap:0;margin-bottom:20px;border:1px solid var(--accent-color);border-radius:8px;overflow:hidden;">
+            <button id="bwModeBreaker" onclick="setBwMode('breaker')"
+              style="flex:1;margin:0;border-radius:0;background:var(--accent-color);color:#fff;font-size:0.95em;padding:11px 5px;">
+              🔌 차단기 → 전선
+            </button>
+            <button id="bwModeWire" onclick="setBwMode('wire')"
+              style="flex:1;margin:0;border-radius:0;background:#fff;color:var(--accent-color);border:none;font-size:0.95em;padding:11px 5px;font-weight:500;border-left:1px solid var(--accent-color);">
+              🔧 전선 → 차단기
+            </button>
+          </div>
+
+          <!-- 차단기→전선 입력 -->
+          <div id="bwBreakerInputs">
+            <div class="input-row">
+              <div class="input-group">
+                <label for="bwBreakerAmp">차단기 용량 (A)</label>
+                <select id="bwBreakerAmp">
+                  <option value="15">15A</option>
+                  <option value="20">20A</option>
+                  <option value="30">30A</option>
+                  <option value="40">40A</option>
+                  <option value="50">50A</option>
+                  <option value="60">60A</option>
+                  <option value="75">75A</option>
+                  <option value="100">100A</option>
+                  <option value="125">125A</option>
+                  <option value="150">150A</option>
+                  <option value="175">175A</option>
+                  <option value="200">200A</option>
+                  <option value="225">225A</option>
+                  <option value="250">250A</option>
+                  <option value="300">300A</option>
+                  <option value="350">350A</option>
+                  <option value="400">400A</option>
+                  <option value="500">500A</option>
+                  <option value="600">600A</option>
+                  <option value="800">800A</option>
+                </select>
+              </div>
+              <div class="input-group">
+                <label for="bwBreakerInstall">설치 방법</label>
+                <select id="bwBreakerInstall">
+                  <option value="공기">공기 중</option>
+                  <option value="관">관내 배선</option>
+                  <option value="지중">지중 매설(관 없음)</option>
+                  <option value="트레이">케이블 트레이</option>
+                  <option value="덕트">덕트 내 배선</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-row">
+              <div class="input-group">
+                <label for="bwBreakerVoltage">전원 종류</label>
+                <select id="bwBreakerVoltage">
+                  <option value="단상">단상 220V</option>
+                  <option value="삼상">삼상 380V</option>
+                </select>
+              </div>
+              <div class="input-group">
+                <label for="bwBreakerTemp">주변 온도 (°C)</label>
+                <select id="bwBreakerTemp">
+                  <option value="20">20°C</option>
+                  <option value="30" selected>30°C (기본)</option>
+                  <option value="35">35°C</option>
+                  <option value="40">40°C</option>
+                  <option value="45">45°C</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- 전선→차단기 입력 -->
+          <div id="bwWireInputs" style="display:none;">
+            <div class="input-row">
+              <div class="input-group">
+                <label for="bwWireType">전선 종류</label>
+                <select id="bwWireType">
+                  <option value="F-CV">F-CV</option>
+                  <option value="HFIX">HFIX</option>
+                  <option value="HIV">HIV</option>
+                  <option value="XLPE">XLPE</option>
+                </select>
+              </div>
+              <div class="input-group">
+                <label for="bwWireSize">전선 굵기 (㎟)</label>
+                <select id="bwWireSize"></select>
+              </div>
+            </div>
+            <div class="input-row">
+              <div class="input-group">
+                <label for="bwWireInstall">설치 방법</label>
+                <select id="bwWireInstall">
+                  <option value="공기">공기 중</option>
+                  <option value="관">관내 배선</option>
+                  <option value="지중">지중 매설(관 없음)</option>
+                  <option value="트레이">케이블 트레이</option>
+                  <option value="덕트">덕트 내 배선</option>
+                </select>
+              </div>
+              <div class="input-group">
+                <label for="bwWireTemp">주변 온도 (°C)</label>
+                <select id="bwWireTemp">
+                  <option value="20">20°C</option>
+                  <option value="30" selected>30°C (기본)</option>
+                  <option value="35">35°C</option>
+                  <option value="40">40°C</option>
+                  <option value="45">45°C</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="bottom">
+            <button id="bwCalcBtn" onclick="calcBreakerWire()">최적 선정</button>
+          </div>
+
+          <div class="result" id="bwResult" style="display:none;"></div>
+        </div>
+
         <!-- 저장된 설정 탭 -->
         <div class="tab-content" id="saved-tab">
           <h2>저장된 설정</h2>
@@ -2644,6 +2767,187 @@ const availableSizes = Object.keys(resistance[cableType])
       event.target.value = '';
     }
     
+
+    // ============================================================
+    // 차단기↔전선 상호 선정 기능
+    // ============================================================
+    let bwCurrentMode = 'breaker'; // 'breaker' | 'wire'
+
+    function setBwMode(mode) {
+      bwCurrentMode = mode;
+      const btnB = document.getElementById('bwModeBreaker');
+      const btnW = document.getElementById('bwModeWire');
+      const inpB = document.getElementById('bwBreakerInputs');
+      const inpW = document.getElementById('bwWireInputs');
+      if (mode === 'breaker') {
+        btnB.style.background = 'var(--accent-color)'; btnB.style.color = '#fff';
+        btnW.style.background = '#fff'; btnW.style.color = 'var(--accent-color)';
+        inpB.style.display = 'block'; inpW.style.display = 'none';
+      } else {
+        btnW.style.background = 'var(--accent-color)'; btnW.style.color = '#fff';
+        btnB.style.background = '#fff'; btnB.style.color = 'var(--accent-color)';
+        inpW.style.display = 'block'; inpB.style.display = 'none';
+      }
+      document.getElementById('bwResult').style.display = 'none';
+    }
+
+    // 전선 굵기 select 초기화
+    function initBwWireSize() {
+      const type = document.getElementById('bwWireType').value;
+      const sel = document.getElementById('bwWireSize');
+      sel.innerHTML = '';
+      Object.keys(cableData[type]).forEach(sz => {
+        const opt = document.createElement('option');
+        opt.value = sz; opt.textContent = sz + ' ㎟';
+        sel.appendChild(opt);
+      });
+    }
+
+    function getClosestTemp(temp) {
+      const keys = Object.keys(temperatureFactor).map(Number).sort((a,b)=>a-b);
+      let closest = keys[0];
+      keys.forEach(k => { if (Math.abs(k - temp) < Math.abs(closest - temp)) closest = k; });
+      return closest;
+    }
+
+    function calcBreakerWire() {
+      const resultDiv = document.getElementById('bwResult');
+      resultDiv.style.display = 'block';
+
+      if (bwCurrentMode === 'breaker') {
+        // ── 차단기 → 전선 선정 ──────────────────────────────────
+        const breakerAmp = parseFloat(document.getElementById('bwBreakerAmp').value);
+        const install    = document.getElementById('bwBreakerInstall').value;
+        const voltage    = document.getElementById('bwBreakerVoltage').value;
+        const tempVal    = parseInt(document.getElementById('bwBreakerTemp').value);
+
+        const tKey = getClosestTemp(tempVal);
+        const tf   = temperatureFactor[tKey] || 1.0;
+        const iF   = installFactor[install] || 1.0;
+        // 차단기 정격 = 전선 허용전류 × 보정계수 (80% rule: 전선 ≥ 차단기 × 1.25)
+        const requiredCapacity = breakerAmp / (iF * tf);
+
+        let rows = '';
+        const cableTypes = ['HFIX','HIV','F-CV','XLPE'];
+        cableTypes.forEach(type => {
+          const sizes = cableData[type];
+          // 조건: 허용전류 ≥ 차단기정격 (보정 전)
+          const eligible = Object.entries(sizes)
+            .filter(([sz, amp]) => amp * iF * tf >= breakerAmp)
+            .sort((a,b) => parseFloat(a[0]) - parseFloat(b[0]));
+
+          if (eligible.length === 0) return;
+
+          const [bestSz, bestRaw] = eligible[0];
+          const bestAdj = Math.floor(bestRaw * iF * tf);
+          const margin  = ((bestAdj / breakerAmp - 1) * 100).toFixed(1);
+          const statusCls = parseFloat(margin) < 10 ? 'warning' : 'success';
+
+          // 모든 적합 사이즈 (최대 3개)
+          const options = eligible.slice(0,3).map(([sz, raw]) => {
+            const adj = Math.floor(raw * iF * tf);
+            return `${sz}㎟ (보정후 ${adj}A)`;
+          }).join(' / ');
+
+          rows += `
+            <div class="result-section">
+              <h2>✅ ${type}</h2>
+              <div class="result-row">
+                <span class="result-label">최소 권장 전선</span>
+                <span class="result-value"><strong>${bestSz} ㎟</strong></span>
+              </div>
+              <div class="result-row">
+                <span class="result-label">보정 후 허용전류</span>
+                <span class="result-value ${statusCls}"><strong>${bestAdj} A</strong> (여유 ${margin}%)</span>
+              </div>
+              <div class="result-row">
+                <span class="result-label">적합 사이즈 옵션</span>
+                <span class="result-value" style="font-size:0.88em">${options}</span>
+              </div>
+            </div>`;
+        });
+
+        resultDiv.innerHTML = `
+          <div class="result-section">
+            <h2>📋 선정 조건</h2>
+            <div class="result-row"><span class="result-label">차단기 정격</span><span class="result-value"><strong>${breakerAmp} A</strong></span></div>
+            <div class="result-row"><span class="result-label">설치 방법</span><span class="result-value">${install} (계수 ${iF})</span></div>
+            <div class="result-row"><span class="result-label">주변 온도</span><span class="result-value">${tempVal}°C (계수 ${tf.toFixed(2)})</span></div>
+            <div class="result-row"><span class="result-label">전원 종류</span><span class="result-value">${voltage}</span></div>
+          </div>
+          ${rows || '<div class="danger" style="padding:10px;">선정 가능한 전선이 없습니다. 조건을 재확인하세요.</div>'}
+          <div class="reference">※ 전선 허용전류 × 설치보정계수 × 온도보정계수 ≥ 차단기 정격 기준으로 선정<br>※ KEC·KS C IEC 60364 기준 적용</div>`;
+
+      } else {
+        // ── 전선 → 차단기 선정 ──────────────────────────────────
+        const type    = document.getElementById('bwWireType').value;
+        const size    = document.getElementById('bwWireSize').value;
+        const install = document.getElementById('bwWireInstall').value;
+        const tempVal = parseInt(document.getElementById('bwWireTemp').value);
+
+        const baseAmp = cableData[type][size];
+        const tKey    = getClosestTemp(tempVal);
+        const tf      = temperatureFactor[tKey] || 1.0;
+        const iF      = installFactor[install] || 1.0;
+        const adjAmp  = baseAmp * iF * tf;
+
+        // 차단기: ≤ 보정 허용전류 (전선 보호 원칙: 차단기 ≤ 전선 허용전류)
+        const validBreakers = breakerSizes.filter(b => b <= adjAmp);
+        const optBreaker    = validBreakers.length > 0 ? validBreakers[validBreakers.length - 1] : null;
+        // 다음 상위 차단기도 표시
+        const nextBreaker   = breakerSizes.find(b => b > (optBreaker || 0));
+
+        // 부하 안전율별 권장
+        const r80  = Math.floor(adjAmp * 0.8);
+        const r100 = Math.floor(adjAmp);
+        const rec80  = breakerSizes.filter(b => b <= r80).pop();
+        const rec100 = breakerSizes.filter(b => b <= r100).pop();
+
+        resultDiv.innerHTML = `
+          <div class="result-section">
+            <h2>📋 선정 조건</h2>
+            <div class="result-row"><span class="result-label">전선 종류/굵기</span><span class="result-value"><strong>${type} ${size} ㎟</strong></span></div>
+            <div class="result-row"><span class="result-label">기본 허용전류</span><span class="result-value">${baseAmp} A</span></div>
+            <div class="result-row"><span class="result-label">설치 방법</span><span class="result-value">${install} (계수 ${iF})</span></div>
+            <div class="result-row"><span class="result-label">주변 온도</span><span class="result-value">${tempVal}°C (계수 ${tf.toFixed(2)})</span></div>
+            <div class="result-row"><span class="result-label">보정 후 허용전류</span><span class="result-value"><strong>${adjAmp.toFixed(1)} A</strong></span></div>
+          </div>
+          <div class="result-section">
+            <h2>⚡ 최적 차단기 용량</h2>
+            <div class="result-row">
+              <span class="result-label">최대 허용 차단기</span>
+              <span class="result-value success"><strong>${optBreaker ? optBreaker + ' A' : '해당 없음'}</strong></span>
+            </div>
+            <div class="result-row">
+              <span class="result-label">80% 부하율 권장</span>
+              <span class="result-value"><strong>${rec80 ? rec80 + ' A' : '-'}</strong> <span class="sub">(연속부하 기준 추천)</span></span>
+            </div>
+            ${nextBreaker ? `<div class="result-row"><span class="result-label">다음 상위 차단기</span><span class="result-value warning">${nextBreaker} A <span class="sub">(전선 교체 필요)</span></span></div>` : ''}
+          </div>
+          <div class="result-section">
+            <h2>📊 표준 차단기 선택 가이드</h2>
+            ${breakerSizes.filter(b => b <= adjAmp * 1.1).map(b => {
+              const ratio = (b / adjAmp * 100).toFixed(0);
+              const cls   = b > adjAmp ? 'danger' : b > adjAmp * 0.85 ? 'warning' : 'success';
+              const note  = b > adjAmp ? '⛔ 과대 — 전선 보호 불가' : b > adjAmp * 0.85 ? '⚠️ 허용 한도 근접' : '✅ 적합';
+              return `<div class="result-row">
+                <span class="result-label">${b} A</span>
+                <span class="result-value ${cls}">${note} (${ratio}%)</span>
+              </div>`;
+            }).join('')}
+          </div>
+          <div class="reference">※ 차단기 정격 ≤ 전선 보정 허용전류 기준 (KEC 212.4)<br>※ 연속 부하 회로는 차단기 정격의 80% 이하로 운용 권장</div>`;
+      }
+    }
+
+    // 초기화 이벤트
+    document.addEventListener('DOMContentLoaded', () => {
+      // bwWireType 변경 시 굵기 목록 갱신
+      document.getElementById('bwWireType').addEventListener('change', initBwWireSize);
+      initBwWireSize();
+    });
+    // ============================================================
+
     // 결과 인쇄
     function printResults() {
       window.print();
@@ -2660,5 +2964,3 @@ const availableSizes = Object.keys(resistance[cableType])
   </script>
 </body>
 </html>
-
-
