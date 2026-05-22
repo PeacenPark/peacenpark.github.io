@@ -620,22 +620,6 @@
         <div class="tab-content active" id="basic-tab">
           <div class="input-row">
             <div class="input-group">
-              <label for="cableType">
-                전선 종류
-                <span class="tooltip">
-                  <span class="tooltip-icon">?</span>
-                  <span class="tooltip-text">사용할 전선의 종류를 선택하세요. 각 유형에 따라 허용 전류가 다릅니다.</span>
-                </span>
-              </label>
-              <select id="cableType">
-                <option value="F-CV">F-CV</option>
-                <option value="HFIX">HFIX</option>
-                <option value="HIV">HIV</option>
-                <option value="XLPE">XLPE</option>
-              </select>
-            </div>
-            
-            <div class="input-group">
               <label for="cableSize">
                 전선 굵기 (㎟)
                 <span class="tooltip">
@@ -644,25 +628,6 @@
                 </span>
               </label>
               <select id="cableSize"></select>
-            </div>
-          </div>
-          
-          <div class="input-row">
-            <div class="input-group">
-              <label for="installMethod">
-                설치 방법
-                <span class="tooltip">
-                  <span class="tooltip-icon">?</span>
-                  <span class="tooltip-text">전선 설치 방법에 따라 허용 전류 값이 달라집니다.</span>
-                </span>
-              </label>
-              <select id="installMethod">
-                <option value="공기">공기 중</option>
-                <option value="관">관내 배선</option>
-                <option value="지중">지중 매설(관 없음)</option>
-                <option value="트레이">케이블 트레이</option>
-                <option value="덕트">덕트 내 배선</option>
-              </select>
             </div>
             
             <div class="input-group">
@@ -681,47 +646,66 @@
             </div>
           </div>
           
-          <div class="input-row">
-            <div class="input-group">
-              <label for="coreCount">
-                Core 수
-                <span class="tooltip">
-                  <span class="tooltip-icon">?</span>
-                  <span class="tooltip-text">전선의 코어 수를 선택하세요.</span>
-                </span>
-              </label>
-              <select id="coreCount">
-                <option value="1">1C</option>
-                <option value="2">2C</option>
-                <option value="3">3C</option>
-                <option value="4">4C</option>
-              </select>
-            </div>
-            
-            <div class="input-group">
-              <label for="load">
-                예상 부하
-                <span class="tooltip">
-                  <span class="tooltip-icon">?</span>
-                  <span class="tooltip-text">실제 흐르는 예상 부하를 입력하세요. 전류(A) 또는 전력(kW)을 선택할 수 있습니다. 비워두면 허용 전류의 80%로 계산합니다.</span>
-                </span>
-              </label>
-              <div class="input-with-unit">
-                <input type="number" id="load" inputmode="decimal" pattern="[0-9]*" placeholder="선택 사항" min="0" step="0.1">
-                <select id="loadUnit">
-                  <option value="A">전류(A)</option>
-                  <option value="kW">전력(kW)</option>
-                </select>
-              </div>
-            </div>
-          </div>
-          
           <div class="advanced-options">
             <div class="toggle-advanced">
               <strong>고급 설정</strong>
               <i>▼</i>
             </div>
             <div class="advanced-content">
+              <div class="input-row">
+                <div class="input-group">
+                  <label for="installMethod">
+                    설치 방법
+                    <span class="tooltip">
+                      <span class="tooltip-icon">?</span>
+                      <span class="tooltip-text">전선 설치 방법에 따라 허용 전류 값이 달라집니다.</span>
+                    </span>
+                  </label>
+                  <select id="installMethod">
+                    <option value="공기">공기 중</option>
+                    <option value="관">관내 배선</option>
+                    <option value="지중">지중 매설(관 없음)</option>
+                    <option value="트레이">케이블 트레이</option>
+                    <option value="덕트">덕트 내 배선</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="input-row">
+                <div class="input-group">
+                  <label for="coreCount">
+                    Core 수
+                    <span class="tooltip">
+                      <span class="tooltip-icon">?</span>
+                      <span class="tooltip-text">전선의 코어 수를 선택하세요.</span>
+                    </span>
+                  </label>
+                  <select id="coreCount">
+                    <option value="1">1C</option>
+                    <option value="2">2C</option>
+                    <option value="3">3C</option>
+                    <option value="4">4C</option>
+                  </select>
+                </div>
+
+                <div class="input-group">
+                  <label for="load">
+                    예상 부하
+                    <span class="tooltip">
+                      <span class="tooltip-icon">?</span>
+                      <span class="tooltip-text">실제 흐르는 예상 부하를 입력하세요. 전류(A) 또는 전력(kW)을 선택할 수 있습니다. 비워두면 허용 전류의 80%로 계산합니다.</span>
+                    </span>
+                  </label>
+                  <div class="input-with-unit">
+                    <input type="number" id="load" inputmode="decimal" pattern="[0-9]*" placeholder="선택 사항" min="0" step="0.1">
+                    <select id="loadUnit">
+                      <option value="A">전류(A)</option>
+                      <option value="kW">전력(kW)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
               <div class="input-row">
                 <div class="input-group">
                   <label for="temperature">
@@ -796,16 +780,6 @@
         <!-- 전압 강하 탭 -->
         <div class="tab-content" id="voltage-drop-tab">
           <div class="input-row">
-            <div class="input-group">
-              <label for="vdCableType">전선 종류</label>
-              <select id="vdCableType">
-                <option value="F-CV">F-CV</option>
-                <option value="HFIX">HFIX</option>
-                <option value="HIV">HIV</option>
-                <option value="XLPE">XLPE</option>
-              </select>
-            </div>
-            
             <div class="input-group">
               <label for="vdCableSize">전선 굵기 (㎟)</label>
               <select id="vdCableSize"></select>
@@ -991,35 +965,6 @@
                   <option value="800">800A</option>
                 </select>
               </div>
-              <div class="input-group">
-                <label for="bwBreakerInstall">설치 방법</label>
-                <select id="bwBreakerInstall">
-                  <option value="공기">공기 중</option>
-                  <option value="관">관내 배선</option>
-                  <option value="지중">지중 매설(관 없음)</option>
-                  <option value="트레이">케이블 트레이</option>
-                  <option value="덕트">덕트 내 배선</option>
-                </select>
-              </div>
-            </div>
-            <div class="input-row">
-              <div class="input-group">
-                <label for="bwBreakerVoltage">전원 종류</label>
-                <select id="bwBreakerVoltage">
-                  <option value="단상">단상 220V</option>
-                  <option value="삼상">삼상 380V</option>
-                </select>
-              </div>
-              <div class="input-group">
-                <label for="bwBreakerTemp">주변 온도 (°C)</label>
-                <select id="bwBreakerTemp">
-                  <option value="20">20°C</option>
-                  <option value="30" selected>30°C (기본)</option>
-                  <option value="35">35°C</option>
-                  <option value="40">40°C</option>
-                  <option value="45">45°C</option>
-                </select>
-              </div>
             </div>
           </div>
 
@@ -1027,39 +972,8 @@
           <div id="bwWireInputs" style="display:none;">
             <div class="input-row">
               <div class="input-group">
-                <label for="bwWireType">전선 종류</label>
-                <select id="bwWireType">
-                  <option value="F-CV">F-CV</option>
-                  <option value="HFIX">HFIX</option>
-                  <option value="HIV">HIV</option>
-                  <option value="XLPE">XLPE</option>
-                </select>
-              </div>
-              <div class="input-group">
                 <label for="bwWireSize">전선 굵기 (㎟)</label>
                 <select id="bwWireSize"></select>
-              </div>
-            </div>
-            <div class="input-row">
-              <div class="input-group">
-                <label for="bwWireInstall">설치 방법</label>
-                <select id="bwWireInstall">
-                  <option value="공기">공기 중</option>
-                  <option value="관">관내 배선</option>
-                  <option value="지중">지중 매설(관 없음)</option>
-                  <option value="트레이">케이블 트레이</option>
-                  <option value="덕트">덕트 내 배선</option>
-                </select>
-              </div>
-              <div class="input-group">
-                <label for="bwWireTemp">주변 온도 (°C)</label>
-                <select id="bwWireTemp">
-                  <option value="20">20°C</option>
-                  <option value="30" selected>30°C (기본)</option>
-                  <option value="35">35°C</option>
-                  <option value="40">40°C</option>
-                  <option value="45">45°C</option>
-                </select>
               </div>
             </div>
           </div>
@@ -1114,11 +1028,6 @@
         "1.5": 17, "2.5": 23, "4": 31, "6": 40, "10": 55, "16": 74, "25": 97,
         "35": 120, "50": 145, "70": 185, "95": 224, "120": 259, "150": 299,
         "185": 341, "240": 403, "300": 472, "400": 545, "500": 614, "600": 690
-      },
-      XLPE: {
-        "1.5": 19, "2.5": 26, "4": 35, "6": 45, "10": 63, "16": 84, "25": 110,
-        "35": 137, "50": 167, "70": 214, "95": 259, "120": 301, "150": 343,
-        "185": 391, "240": 468
       }
     };
 
@@ -1163,22 +1072,12 @@
       // 탭 전환 기능 설정
       setupTabs();
       
-      // 기본 탭 초기화
-      updateCableOptions('cableType', 'cableSize');
-      updateCoreOptions('cableType', 'coreCount');
-      
-      // 전압 강하 탭 초기화
-      updateCableOptions('vdCableType', 'vdCableSize');
+      // 탭 굵기 목록 초기화
+      updateCableOptions(null, 'cableSize');
+      updateCoreOptions(null, 'coreCount');
+      updateCableOptions(null, 'vdCableSize');
       
       // 이벤트 리스너 등록
-      document.getElementById('cableType').addEventListener('change', () => {
-        updateCableOptions('cableType', 'cableSize');
-        updateCoreOptions('cableType', 'coreCount');
-      });
-      
-      document.getElementById('vdCableType').addEventListener('change', () => {
-        updateCableOptions('vdCableType', 'vdCableSize');
-      });
       
       // 고급 설정 토글
       document.querySelector('.toggle-advanced').addEventListener('click', toggleAdvancedOptions);
@@ -1488,68 +1387,33 @@ function setupTabs() {
   // 스와이프 관련 코드는 모두 제거됨
 }
     
-    // 전선 종류에 따른 굵기 옵션 업데이트
+    // 굵기 옵션 업데이트 (F-CV 기준 고정)
     function updateCableOptions(typeId, sizeId) {
-      const typeSelect = document.getElementById(typeId);
       const sizeSelect = document.getElementById(sizeId);
-      const selectedType = typeSelect.value;
-      
-      // 기존 옵션 삭제
       sizeSelect.innerHTML = "";
-      
-      // 선택된 케이블 타입에 따른 사이즈 옵션 추가
-      const sizes = Object.keys(cableData[selectedType]).map(Number).sort((a, b) => a - b);
-      
+      const sizes = Object.keys(cableData['F-CV']).map(Number).sort((a, b) => a - b);
       sizes.forEach(size => {
         const option = document.createElement('option');
         option.value = size;
         option.textContent = `${size} ㎟`;
         sizeSelect.appendChild(option);
       });
-      
-      // 첫 번째 옵션 선택
       sizeSelect.selectedIndex = 0;
     }
     
-    // 전선 종류에 따른 코어 옵션 업데이트
+    // 코어 옵션 업데이트 (1~4C 고정)
     function updateCoreOptions(typeId, coreId) {
-  const typeSelect = document.getElementById(typeId);
-  const coreSelect = document.getElementById(coreId);
-  const selectedType = typeSelect.value;
-
-  // 기존 옵션 초기화
-  coreSelect.innerHTML = "";
-
-  // 1C만 가능한 전선 종류인지 확인
-  if (selectedType === "HFIX" || selectedType === "HIV") {
-    // 1C 하나만 추가
-    const option = document.createElement('option');
-    option.value = "1";
-    option.textContent = "1C";
-    coreSelect.appendChild(option);
-
-    // 드롭다운 비활성화
-    coreSelect.disabled = true;
-  } else {
-    // 1C~4C 모두 추가
-    const options = [
-      {value: "1", label: "1C"},
-      {value: "2", label: "2C"},
-      {value: "3", label: "3C"},
-      {value: "4", label: "4C"}
-    ];
-
-    options.forEach(opt => {
-      const option = document.createElement('option');
-      option.value = opt.value;
-      option.textContent = opt.label;
-      coreSelect.appendChild(option);
-    });
-
-    // 드롭다운 활성화
-    coreSelect.disabled = false;
-  }
-}
+      const coreSelect = document.getElementById(coreId);
+      coreSelect.innerHTML = "";
+      coreSelect.disabled = false;
+      [{value:"1",label:"1C"},{value:"2",label:"2C"},{value:"3",label:"3C"},{value:"4",label:"4C"}]
+        .forEach(opt => {
+          const option = document.createElement('option');
+          option.value = opt.value;
+          option.textContent = opt.label;
+          coreSelect.appendChild(option);
+        });
+    }
     
     // 고급 설정 토글
     function toggleAdvancedOptions() {
@@ -1632,7 +1496,6 @@ function setupTabs() {
       // 데이터 로딩 애니메이션을 위한 지연
       setTimeout(() => {
         // 입력값 가져오기
-        const type = document.getElementById('cableType').value;
         const size = document.getElementById('cableSize').value;
         const method = document.getElementById('installMethod').value;
         const voltage = document.getElementById('voltageType').value;
@@ -1646,14 +1509,13 @@ function setupTabs() {
         const groupingFactor = parseFloat(document.getElementById('groupingFactor').value) || 1.0;
         const soilResistivity = parseFloat(document.getElementById('soilResistivity').value) || 1.5;
         
-        // 필수 값 확인
-        if (!size || !method || !cores || !voltage || !type) {
+        if (!size || !method || !cores || !voltage) {
           document.getElementById('result').innerHTML = "<div class='warning'>모든 필수 항목을 선택해주세요.</div>";
           return;
         }
         
-        // 기본 허용 전류
-        const baseCurrent = cableData[type][size];
+        // 허용전류: F-CV 기준 고정
+        const baseCurrent = cableData['F-CV'][size];
         
         // 보정 계수 적용
         const installCoef = installFactor[method];
@@ -1673,11 +1535,12 @@ function setupTabs() {
         // 모든 보정 계수 적용
         const correctedCurrent = Math.round(baseCurrent * installCoef * coreCoef * tempCoef * parallelCoef * groupingFactor * soilCoef * 10) / 10;
         
-        // 부하 값 처리 (전력 단위 입력이면 전류로 변환)
-        let actualLoad;
+        // 부하 값 처리 (입력된 경우에만)
+        const hasLoad = !!loadInput.value;
+        let actualLoad = null;
         let originalInputValue = '';
         
-        if (loadInput.value) {
+        if (hasLoad) {
           if (loadUnit === 'kW') {
             const powerValue = parseFloat(loadInput.value);
             actualLoad = convertPowerToCurrent(powerValue, voltage);
@@ -1686,28 +1549,21 @@ function setupTabs() {
             actualLoad = parseFloat(loadInput.value);
             originalInputValue = actualLoad + ' A';
           }
-        } else {
-          // 값이 없는 경우 보정된 전류의 80% 사용
-          actualLoad = Math.round(correctedCurrent * 0.8 * 10) / 10;
         }
         
-        // 부하 전류가 허용 전류 초과 시 경고 및 추천
+        // 가능 전력량은 항상 보정 후 허용 전류 기준
+        const contractPower = convertCurrentToPower(correctedCurrent, voltage);
+        
+        // 부하 전류가 허용 전류 초과 시 경고 및 추천 (부하 입력 시에만)
         let loadWarning = '';
-        if (actualLoad > correctedCurrent) {
+        if (hasLoad && actualLoad > correctedCurrent) {
           // 적합한 케이블 크기 찾기
-          const recommendations = [];
-          const sizes = Object.keys(cableData[type]).map(Number).sort((a, b) => a - b);
-          
-          for (const s of sizes) {
-            const base = cableData[type][s];
-            const corrected = base * installCoef * coreCoef * tempCoef * parallelCoef * groupingFactor * soilCoef;
-            if (corrected >= actualLoad) {
-              recommendations.push({
-                size: s,
-                current: corrected
-              });
-              if (recommendations.length >= 3) break;
-            }
+          // F-CV 기준으로 적합 굵기 탐색
+          const fcvSizes = Object.keys(cableData['F-CV']).map(Number).sort((a, b) => a - b);
+          let recSize = null, recCurrent = null;
+          for (const s of fcvSizes) {
+            const corrected = cableData['F-CV'][s] * installCoef * coreCoef * tempCoef * parallelCoef * groupingFactor * soilCoef;
+            if (corrected >= actualLoad) { recSize = s; recCurrent = corrected; break; }
           }
           
           loadWarning = `
@@ -1717,53 +1573,34 @@ function setupTabs() {
                 부하 전류(${actualLoad.toFixed(1)}A) > 허용 전류(${correctedCurrent}A)
               </div>
             </div>
-            <div class="result-row">
-              <div class="result-label">추천 케이블:</div>
-              <div class="result-value">
-                ${recommendations.map(r => `${type} ${r.size}㎟ (${r.current.toFixed(1)}A)`).join('<br>')}
-              </div>
-            </div>
+            ${recSize ? `<div class="result-row">
+              <div class="result-label">추천 굵기:</div>
+              <div class="result-value">${recSize}㎟ (${recCurrent.toFixed(1)}A)</div>
+            </div>` : ''}
           `;
         }
         
-        // 차단기 계산
+        // 차단기 계산: 차단기 ≤ 허용전류 (KEC 212.4 기준)
         let breakerText;
-        if (actualLoad > correctedCurrent) {
+        if (hasLoad && actualLoad > correctedCurrent) {
           breakerText = `<span class="danger">부하 전류 초과 - 케이블 업사이징 필요</span>`;
         } else {
-          const minRange = Math.ceil(actualLoad);
-          const maxBreaker = Math.floor(correctedCurrent * 1.25);
-          const idealBreaker = Math.ceil(actualLoad * 1.25); // 부하 전류의 125%
-          
-          let validBreakers = breakerSizes.filter(a => a >= actualLoad && a <= maxBreaker);
-          let breakerRangeText = `<div class="sub">- 추천 전류 범위: ${minRange}A ~ ${maxBreaker}A</div>`;
-          
-          if (validBreakers.length > 0) {
-            // 이상적인 차단기와 가장 가까운 것 찾기
-            const idealBreakers = validBreakers.filter(b => b >= idealBreaker).slice(0, 3);
-            
-            if (idealBreakers.length > 0) {
-              breakerText = `<span class="success">${idealBreakers.join(" / ")} A</span>` + breakerRangeText;
-            } else {
-              breakerText = `<span>${validBreakers.slice(0, 3).join(" / ")} A</span>` + breakerRangeText;
-            }
+          // 차단기는 허용전류 이하여야 함
+          const validBreakers = breakerSizes.filter(b => b <= correctedCurrent);
+          const optBreaker = validBreakers.length > 0 ? validBreakers[validBreakers.length - 1] : null;
+          const rec80 = breakerSizes.filter(b => b <= Math.floor(correctedCurrent * 0.8)).pop();
+
+          if (optBreaker) {
+            breakerText = `<span class="success">${optBreaker} A</span>
+              <div class="sub">- 허용전류(${correctedCurrent}A) 이하 최대 규격</div>
+              ${rec80 ? `<div class="sub">- 연속부하 권장(80%): ${rec80} A</div>` : ''}`;
           } else {
-            const fallback = breakerSizes.filter(a => a <= maxBreaker).pop();
-            if (fallback) {
-              breakerText = `<span class="warning">${fallback} A (권장 최대값)</span>
-                <div class="sub">- 부하 전류보다 작지만, 권장 가능한 최대값</div>
-                ${breakerRangeText}`;
-            } else {
-              breakerText = `<span class="danger">적정 차단기 없음 – 전선 굵기를 상향하세요</span>`;
-            }
+            breakerText = `<span class="danger">적정 차단기 없음 – 전선 굵기를 상향하세요</span>`;
           }
         }
         
         // 전압 값
         const voltageVal = voltage === "단상" ? 220 : voltage === "삼상" ? 380 : 110;
-        
-        // 전력량 계산
-        const contractPower = convertCurrentToPower(actualLoad, voltage);
         
         // 접지선 굵기
         const groundSize = getGroundSize(size);
@@ -1782,11 +1619,7 @@ function setupTabs() {
           <div class="result-section">
             <h2>입력 정보</h2>
             <div class="result-row">
-              <div class="result-label">케이블 종류:</div>
-              <div class="result-value">${type} 케이블</div>
-            </div>
-            <div class="result-row">
-              <div class="result-label">굵기:</div>
+              <div class="result-label">전선 굵기:</div>
               <div class="result-value">${size} ㎟</div>
             </div>
             <div class="result-row">
@@ -1850,40 +1683,41 @@ function setupTabs() {
               </div>
             </div>
             
+            ${hasLoad ? `
             <div class="result-row">
-              <div class="result-label">③ ${loadInput.value ? '입력된' : '예상'} 부하:</div>
+              <div class="result-label">③ 입력된 부하:</div>
               <div class="result-value">
                 <span class="highlight">${actualLoad.toFixed(1)} A</span>
-                ${loadInput.value && loadUnit === 'kW' ? 
-                  `<div class="sub">입력값: ${originalInputValue}</div>` : ''}
-                ${!loadInput.value ? `<div class="sub">보정 후 허용 전류의 80%로 자동 계산됨</div>` : ''}
+                ${loadUnit === 'kW' ? `<div class="sub">입력값: ${originalInputValue}</div>` : ''}
               </div>
             </div>
+            ` : ''}
             
             <div class="result-row">
-              <div class="result-label">④ 추천 차단기:</div>
+              <div class="result-label">${hasLoad ? '④' : '③'} 추천 차단기:</div>
               <div class="result-value">${breakerText}
-                <div class="sub">조건: 부하 전류 이상, 허용 전류의 125% 이내</div>
+                <div class="sub">기준: 차단기 정격 ≤ 전선 허용전류 (KEC 212.4)</div>
               </div>
             </div>
             
             <div class="result-row">
-              <div class="result-label">⑤ 가능 전력량:</div>
+              <div class="result-label">${hasLoad ? '⑤' : '④'} 가능 전력량:</div>
               <div class="result-value"><span class="highlight">${contractPower.toFixed(1)} kW</span>
                 <div class="sub">
                   계산식: ${
                     voltage === "단상"
-                      ? `${voltageVal}V × ${actualLoad.toFixed(1)}A = ${(voltageVal * actualLoad).toFixed(1)}W`
+                      ? `${voltageVal}V × ${correctedCurrent}A = ${(voltageVal * correctedCurrent).toFixed(1)}W`
                       : voltage === "삼상"
-                      ? `√3 × ${voltageVal}V × ${actualLoad.toFixed(1)}A = ${(Math.sqrt(3) * voltageVal * actualLoad).toFixed(1)}W`
-                      : `${voltageVal}V × ${actualLoad.toFixed(1)}A = ${(voltageVal * actualLoad).toFixed(1)}W`
+                      ? `√3 × ${voltageVal}V × ${correctedCurrent}A = ${(Math.sqrt(3) * voltageVal * correctedCurrent).toFixed(1)}W`
+                      : `${voltageVal}V × ${correctedCurrent}A = ${(voltageVal * correctedCurrent).toFixed(1)}W`
                   }
+                  <br>(보정 후 허용 전류 기준)
                 </div>
               </div>
             </div>
             
             <div class="result-row">
-              <div class="result-label">⑥ 접지선 굵기:</div>
+              <div class="result-label">${hasLoad ? '⑥' : '⑤'} 접지선 굵기:</div>
               <div class="result-value"><span class="highlight">${groundSize}</span>
                 <div class="sub">기준: 16㎟ 이하 동일, 16~35㎟는 16㎟, 35㎟ 초과는 1/2</div>
               </div>
@@ -1914,7 +1748,6 @@ function setupTabs() {
       
       setTimeout(() => {
         // 입력값 가져오기
-        const cableType = document.getElementById('vdCableType').value;
         const cableSize = document.getElementById('vdCableSize').value;
         const voltageType = document.getElementById('vdVoltageType').value;
         const loadInput = document.getElementById('vdCurrent');
@@ -1922,11 +1755,13 @@ function setupTabs() {
         const length = parseFloat(document.getElementById('vdLength').value);
         const powerFactor = parseFloat(document.getElementById('vdPowerFactor').value) || 0.9;
         
-        // 유효성 검사
-        if (!cableType || !cableSize || !voltageType || !loadInput.value || isNaN(length)) {
+        if (!cableSize || !voltageType || !loadInput.value || isNaN(length)) {
           document.getElementById('voltageDropResult').innerHTML = "<div class='warning'>모든 필수 항목을 입력해주세요.</div>";
           return;
         }
+        
+        // 저항값: F-CV 기준 고정
+        const effectiveCableType = 'F-CV';
         
         // 부하 입력값을 전류로 변환 (kW 입력인 경우)
         let current, originalInputValue;
@@ -1953,11 +1788,6 @@ function setupTabs() {
             "1.5": 12.1, "2.5": 7.41, "4": 4.61, "6": 3.08, "10": 1.83, "16": 1.15, "25": 0.727,
             "35": 0.524, "50": 0.387, "70": 0.268, "95": 0.193, "120": 0.153, "150": 0.124,
             "185": 0.0991, "240": 0.0754, "300": 0.0601, "400": 0.0470, "500": 0.0366, "600": 0.0283
-          },
-          XLPE: {
-            "1.5": 12.1, "2.5": 7.41, "4": 4.61, "6": 3.08, "10": 1.83, "16": 1.15, "25": 0.727,
-            "35": 0.524, "50": 0.387, "70": 0.268, "95": 0.193, "120": 0.153, "150": 0.124,
-            "185": 0.0991, "240": 0.0754
           }
         };
         
@@ -1972,7 +1802,7 @@ function setupTabs() {
         const voltageValue = voltageType === "단상" ? 220 : voltageType === "삼상" ? 380 : 110;
         
         // 전압 강하 계산 (V)
-        const R = resistance[cableType][cableSize]; // Ohm/km
+        const R = resistance[effectiveCableType][cableSize]; // Ohm/km
         const X = reactance[cableSize]; // Ohm/km
         const sinPhi = Math.sqrt(1 - powerFactor * powerFactor);
         
@@ -2008,7 +1838,7 @@ function setupTabs() {
             
             <div class="result-row">
               <div class="result-label">케이블 정보:</div>
-              <div class="result-value">${cableType} ${cableSize}㎟, ${length}m</div>
+              <div class="result-value">${cableSize}㎟, ${length}m</div>
             </div>
             
             <div class="result-row">
@@ -2063,12 +1893,12 @@ function setupTabs() {
         }, 100);
         
         // 다른 굵기의 케이블로 전압 강하 비교 (차트 준비)
-        prepareVoltageDropChart(cableType, voltageType, current, length, powerFactor, cableSize);
+        prepareVoltageDropChart(voltageType, current, length, powerFactor, cableSize);
       }, 300);
     }
     
     // 전압 강하 차트 준비 함수 (모바일에서는 테이블 형태로 표시)
-    function prepareVoltageDropChart(cableType, voltageType, current, length, powerFactor, selectedSize) {
+    function prepareVoltageDropChart(voltageType, current, length, powerFactor, selectedSize) {
       const chartContainer = document.getElementById('voltageDropChart');
       
       // 케이블 저항값 (Ohm/km)
@@ -2085,11 +1915,6 @@ function setupTabs() {
           "1.5": 12.1, "2.5": 7.41, "4": 4.61, "6": 3.08, "10": 1.83, "16": 1.15, "25": 0.727,
           "35": 0.524, "50": 0.387, "70": 0.268, "95": 0.193, "120": 0.153, "150": 0.124,
           "185": 0.0991, "240": 0.0754, "300": 0.0601, "400": 0.0470, "500": 0.0366, "600": 0.0283
-        },
-        XLPE: {
-          "1.5": 12.1, "2.5": 7.41, "4": 4.61, "6": 3.08, "10": 1.83, "16": 1.15, "25": 0.727,
-          "35": 0.524, "50": 0.387, "70": 0.268, "95": 0.193, "120": 0.153, "150": 0.124,
-          "185": 0.0991, "240": 0.0754
         }
 };
       
@@ -2106,7 +1931,7 @@ function setupTabs() {
       
       // 비교할 대표적인 케이블 굵기들
       const displaySizes = ["1.5", "2.5", "4", "6", "10", "16", "25", "35", "50", "70", "95", "120", "150", "185", "240", "300", "400", "500", "600"];
-const availableSizes = Object.keys(resistance[cableType])
+const availableSizes = Object.keys(resistance['F-CV'])
   .filter(s => displaySizes.includes(s))
   .sort((a, b) => parseFloat(a) - parseFloat(b)); // 숫자 오름차순 정렬
       
@@ -2114,7 +1939,7 @@ const availableSizes = Object.keys(resistance[cableType])
       let tableRows = '';
       availableSizes.forEach(size => {
         // 전압 강하 계산
-        const R = resistance[cableType][size];
+        const R = resistance['F-CV'][size];
         const X = reactance[size];
         
         let voltageDrop;
@@ -2156,7 +1981,7 @@ const availableSizes = Object.keys(resistance[cableType])
         <div style="padding: 15px; text-align: center; background: #f5f5f5; border-radius: 8px;">
           <strong>다양한 케이블 굵기별 전압 강하 비교</strong>
           <p style="font-size: 0.9em; margin-top: 5px;">
-            ${cableType} 케이블 기준, ${length}m 길이에서 ${current.toFixed(1)}A 부하 시
+            F-CV 기준, ${length}m 길이에서 ${current.toFixed(1)}A 부하 시
             <br>굵기가 클수록 전압 강하가 적습니다
           </p>
           <div class="comparison-table-wrapper" style="margin-top: 10px;">
@@ -2249,11 +2074,6 @@ const availableSizes = Object.keys(resistance[cableType])
             "1.5": 12.1, "2.5": 7.41, "4": 4.61, "6": 3.08, "10": 1.83, "16": 1.15, "25": 0.727,
             "35": 0.524, "50": 0.387, "70": 0.268, "95": 0.193, "120": 0.153, "150": 0.124,
             "185": 0.0991, "240": 0.0754, "300": 0.0601, "400": 0.0470, "500": 0.0366, "600": 0.0283
-          },
-          XLPE: {
-            "1.5": 12.1, "2.5": 7.41, "4": 4.61, "6": 3.08, "10": 1.83, "16": 1.15, "25": 0.727,
-            "35": 0.524, "50": 0.387, "70": 0.268, "95": 0.193, "120": 0.153, "150": 0.124,
-            "185": 0.0991, "240": 0.0754
           }
         };
 
@@ -2270,16 +2090,15 @@ const availableSizes = Object.keys(resistance[cableType])
           voltageDropBased: {} // 전압 강하 기준 결과
         };
 
-        // 각 케이블 타입별 분석
+        // 각 케이블 타입별 분석 (허용전류 = baseCurrent, 보정계수 미적용)
         for (const type in cableData) {
           const sizes = Object.keys(cableData[type]).map(Number).sort((a, b) => a - b);
           
           // 1. 허용 전류 기준 최소 사이즈 찾기
           for (const size of sizes) {
-            const baseCurrent = cableData[type][size];
-            const correctedCurrent = baseCurrent * installFactor[installMethod];
+            const allowedCurrent = cableData[type][size]; // 최대 허용전류 그대로
             
-            if (correctedCurrent >= currentNeeded) {
+            if (allowedCurrent >= currentNeeded) {
               // 전압 강하 계산 (표시용)
               const R = resistance[type][size];
               const X = reactance[size];
@@ -2294,7 +2113,7 @@ const availableSizes = Object.keys(resistance[cableType])
               
               results.currentBased[type] = {
                 size: size,
-                current: correctedCurrent,
+                current: allowedCurrent,
                 voltageDropPercent: voltageDropPercent
               };
               break;
@@ -2303,10 +2122,9 @@ const availableSizes = Object.keys(resistance[cableType])
           
           // 2. 전압 강하 기준 최소 사이즈 찾기
           for (const size of sizes) {
-            const baseCurrent = cableData[type][size];
-            const correctedCurrent = baseCurrent * installFactor[installMethod];
+            const allowedCurrent = cableData[type][size]; // 최대 허용전류 그대로
             
-            if (correctedCurrent >= currentNeeded) {
+            if (allowedCurrent >= currentNeeded) {
               // 전압 강하 계산
               const R = resistance[type][size];
               const X = reactance[size];
@@ -2322,7 +2140,7 @@ const availableSizes = Object.keys(resistance[cableType])
               if (voltageDropPercent <= MAX_VOLTAGE_DROP_PERCENT) {
                 results.voltageDropBased[type] = {
                   size: size,
-                  current: correctedCurrent,
+                  current: allowedCurrent,
                   voltageDropPercent: voltageDropPercent
                 };
                 break;
@@ -2476,7 +2294,7 @@ const availableSizes = Object.keys(resistance[cableType])
       const config = {
         id: Date.now(),
         date: new Date().toLocaleString(),
-        cableType: document.getElementById('cableType').value,
+
         cableSize: document.getElementById('cableSize').value,
         installMethod: document.getElementById('installMethod').value,
         voltageType: document.getElementById('voltageType').value,
@@ -2491,7 +2309,7 @@ const availableSizes = Object.keys(resistance[cableType])
       
       // 이름 입력 받기
       const configName = prompt('저장할 설정의 이름을 입력하세요:', 
-        `${config.cableType} ${config.cableSize}㎟ (${config.voltageType})`);
+        `${config.cableSize}㎟ (${config.voltageType})`);
       
       if (!configName) return;
       
@@ -2550,7 +2368,7 @@ const availableSizes = Object.keys(resistance[cableType])
         item.innerHTML = `
           <div class="config-title">${config.name}</div>
           <div class="config-details">
-            ${config.cableType} ${config.cableSize}㎟, ${config.installMethod}, ${config.voltageType}, ${config.coreCount}C
+            ${config.cableSize}㎟, ${config.installMethod}, ${config.voltageType}, ${config.coreCount}C
             <br>부하: ${loadInfo}, 저장: ${new Date(config.id).toLocaleDateString()}
           </div>
         `;
@@ -2601,11 +2419,10 @@ const availableSizes = Object.keys(resistance[cableType])
       document.querySelector('.tab[data-tab="basic"]').click();
       
       // 기본 설정 적용
-      document.getElementById('cableType').value = config.cableType;
       
       // 케이블 옵션 업데이트
-      updateCableOptions('cableType', 'cableSize');
-      updateCoreOptions('cableType', 'coreCount');
+      updateCableOptions(null, 'cableSize');
+      updateCoreOptions(null, 'coreCount');
       
       // 나머지 설정 적용
       document.getElementById('cableSize').value = config.cableSize;
@@ -2791,12 +2608,11 @@ const availableSizes = Object.keys(resistance[cableType])
       document.getElementById('bwResult').style.display = 'none';
     }
 
-    // 전선 굵기 select 초기화
+    // 전선 굵기 select 초기화 (F-CV 기준 고정)
     function initBwWireSize() {
-      const type = document.getElementById('bwWireType').value;
       const sel = document.getElementById('bwWireSize');
       sel.innerHTML = '';
-      Object.keys(cableData[type]).forEach(sz => {
+      Object.keys(cableData['F-CV']).sort((a,b)=>parseFloat(a)-parseFloat(b)).forEach(sz => {
         const opt = document.createElement('option');
         opt.value = sz; opt.textContent = sz + ' ㎟';
         sel.appendChild(opt);
@@ -2817,100 +2633,70 @@ const availableSizes = Object.keys(resistance[cableType])
       if (bwCurrentMode === 'breaker') {
         // ── 차단기 → 전선 선정 ──────────────────────────────────
         const breakerAmp = parseFloat(document.getElementById('bwBreakerAmp').value);
-        const install    = document.getElementById('bwBreakerInstall').value;
-        const voltage    = document.getElementById('bwBreakerVoltage').value;
-        const tempVal    = parseInt(document.getElementById('bwBreakerTemp').value);
 
-        const tKey = getClosestTemp(tempVal);
-        const tf   = temperatureFactor[tKey] || 1.0;
-        const iF   = installFactor[install] || 1.0;
-        // 차단기 정격 = 전선 허용전류 × 보정계수 (80% rule: 전선 ≥ 차단기 × 1.25)
-        const requiredCapacity = breakerAmp / (iF * tf);
+        // F-CV 기준: 허용전류 ≥ 차단기 정격인 최소 굵기 선정 (KEC 212.4)
+        const eligible = Object.entries(cableData['F-CV'])
+          .filter(([sz, amp]) => amp >= breakerAmp)
+          .sort((a,b) => parseFloat(a[0]) - parseFloat(b[0]));
 
-        let rows = '';
-        const cableTypes = ['HFIX','HIV','F-CV','XLPE'];
-        cableTypes.forEach(type => {
-          const sizes = cableData[type];
-          // 조건: 허용전류 ≥ 차단기정격 (보정 전)
-          const eligible = Object.entries(sizes)
-            .filter(([sz, amp]) => amp * iF * tf >= breakerAmp)
-            .sort((a,b) => parseFloat(a[0]) - parseFloat(b[0]));
-
-          if (eligible.length === 0) return;
-
-          const [bestSz, bestRaw] = eligible[0];
-          const bestAdj = Math.floor(bestRaw * iF * tf);
-          const margin  = ((bestAdj / breakerAmp - 1) * 100).toFixed(1);
-          const statusCls = parseFloat(margin) < 10 ? 'warning' : 'success';
-
-          // 모든 적합 사이즈 (최대 3개)
-          const options = eligible.slice(0,3).map(([sz, raw]) => {
-            const adj = Math.floor(raw * iF * tf);
-            return `${sz}㎟ (보정후 ${adj}A)`;
-          }).join(' / ');
-
-          rows += `
+        if (eligible.length === 0) {
+          resultDiv.innerHTML = `
             <div class="result-section">
-              <h2>✅ ${type}</h2>
-              <div class="result-row">
-                <span class="result-label">최소 권장 전선</span>
-                <span class="result-value"><strong>${bestSz} ㎟</strong></span>
-              </div>
-              <div class="result-row">
-                <span class="result-label">보정 후 허용전류</span>
-                <span class="result-value ${statusCls}"><strong>${bestAdj} A</strong> (여유 ${margin}%)</span>
-              </div>
-              <div class="result-row">
-                <span class="result-label">적합 사이즈 옵션</span>
-                <span class="result-value" style="font-size:0.88em">${options}</span>
-              </div>
-            </div>`;
-        });
+              <h2>📋 선정 조건</h2>
+              <div class="result-row"><span class="result-label">차단기 정격</span><span class="result-value"><strong>${breakerAmp} A</strong></span></div>
+            </div>
+            <div class="danger" style="padding:10px;">선정 가능한 전선이 없습니다. 조건을 재확인하세요.</div>`;
+          return;
+        }
+
+        const [bestSz, bestAmp] = eligible[0];
+        const margin = ((bestAmp / breakerAmp - 1) * 100).toFixed(1);
+        const statusCls = parseFloat(margin) < 10 ? 'warning' : 'success';
+        const options = eligible.slice(0,3).map(([sz, amp]) => `${sz}㎟ (${amp}A)`).join(' / ');
 
         resultDiv.innerHTML = `
           <div class="result-section">
             <h2>📋 선정 조건</h2>
             <div class="result-row"><span class="result-label">차단기 정격</span><span class="result-value"><strong>${breakerAmp} A</strong></span></div>
-            <div class="result-row"><span class="result-label">설치 방법</span><span class="result-value">${install} (계수 ${iF})</span></div>
-            <div class="result-row"><span class="result-label">주변 온도</span><span class="result-value">${tempVal}°C (계수 ${tf.toFixed(2)})</span></div>
-            <div class="result-row"><span class="result-label">전원 종류</span><span class="result-value">${voltage}</span></div>
           </div>
-          ${rows || '<div class="danger" style="padding:10px;">선정 가능한 전선이 없습니다. 조건을 재확인하세요.</div>'}
-          <div class="reference">※ 전선 허용전류 × 설치보정계수 × 온도보정계수 ≥ 차단기 정격 기준으로 선정<br>※ KEC·KS C IEC 60364 기준 적용</div>`;
+          <div class="result-section">
+            <h2>⚡ 권장 전선 굵기</h2>
+            <div class="result-row">
+              <span class="result-label">최소 권장 굵기</span>
+              <span class="result-value"><strong>${bestSz} ㎟</strong></span>
+            </div>
+            <div class="result-row">
+              <span class="result-label">최대 허용전류</span>
+              <span class="result-value ${statusCls}"><strong>${bestAmp} A</strong> (여유 ${margin}%)</span>
+            </div>
+            <div class="result-row">
+              <span class="result-label">상위 사이즈 옵션</span>
+              <span class="result-value" style="font-size:0.88em">${options}</span>
+            </div>
+          </div>
+          <div class="reference">※ 전선 최대 허용전류 ≥ 차단기 정격 기준 (KEC 212.4)<br>※ 보정계수 미적용 — 설치환경에 따라 상향 선정 필요</div>`;
 
       } else {
         // ── 전선 → 차단기 선정 ──────────────────────────────────
-        const type    = document.getElementById('bwWireType').value;
         const size    = document.getElementById('bwWireSize').value;
-        const install = document.getElementById('bwWireInstall').value;
-        const tempVal = parseInt(document.getElementById('bwWireTemp').value);
 
-        const baseAmp = cableData[type][size];
-        const tKey    = getClosestTemp(tempVal);
-        const tf      = temperatureFactor[tKey] || 1.0;
-        const iF      = installFactor[install] || 1.0;
-        const adjAmp  = baseAmp * iF * tf;
+        // 허용전류: F-CV 기준 고정
+        const baseAmp = cableData['F-CV'][size];
 
-        // 차단기: ≤ 보정 허용전류 (전선 보호 원칙: 차단기 ≤ 전선 허용전류)
-        const validBreakers = breakerSizes.filter(b => b <= adjAmp);
+        // 차단기: ≤ 최대 허용전류 (전선 보호 원칙)
+        const validBreakers = breakerSizes.filter(b => b <= baseAmp);
         const optBreaker    = validBreakers.length > 0 ? validBreakers[validBreakers.length - 1] : null;
-        // 다음 상위 차단기도 표시
         const nextBreaker   = breakerSizes.find(b => b > (optBreaker || 0));
 
-        // 부하 안전율별 권장
-        const r80  = Math.floor(adjAmp * 0.8);
-        const r100 = Math.floor(adjAmp);
+        // 80% 부하율 권장
+        const r80    = Math.floor(baseAmp * 0.8);
         const rec80  = breakerSizes.filter(b => b <= r80).pop();
-        const rec100 = breakerSizes.filter(b => b <= r100).pop();
 
         resultDiv.innerHTML = `
           <div class="result-section">
             <h2>📋 선정 조건</h2>
-            <div class="result-row"><span class="result-label">전선 종류/굵기</span><span class="result-value"><strong>${type} ${size} ㎟</strong></span></div>
-            <div class="result-row"><span class="result-label">기본 허용전류</span><span class="result-value">${baseAmp} A</span></div>
-            <div class="result-row"><span class="result-label">설치 방법</span><span class="result-value">${install} (계수 ${iF})</span></div>
-            <div class="result-row"><span class="result-label">주변 온도</span><span class="result-value">${tempVal}°C (계수 ${tf.toFixed(2)})</span></div>
-            <div class="result-row"><span class="result-label">보정 후 허용전류</span><span class="result-value"><strong>${adjAmp.toFixed(1)} A</strong></span></div>
+            <div class="result-row"><span class="result-label">전선 굵기</span><span class="result-value"><strong>${size} ㎟</strong></span></div>
+            <div class="result-row"><span class="result-label">최대 허용전류</span><span class="result-value"><strong>${baseAmp} A</strong></span></div>
           </div>
           <div class="result-section">
             <h2>⚡ 최적 차단기 용량</h2>
@@ -2926,24 +2712,22 @@ const availableSizes = Object.keys(resistance[cableType])
           </div>
           <div class="result-section">
             <h2>📊 표준 차단기 선택 가이드</h2>
-            ${breakerSizes.filter(b => b <= adjAmp * 1.1).map(b => {
-              const ratio = (b / adjAmp * 100).toFixed(0);
-              const cls   = b > adjAmp ? 'danger' : b > adjAmp * 0.85 ? 'warning' : 'success';
-              const note  = b > adjAmp ? '⛔ 과대 — 전선 보호 불가' : b > adjAmp * 0.85 ? '⚠️ 허용 한도 근접' : '✅ 적합';
+            ${breakerSizes.filter(b => b <= baseAmp * 1.1).map(b => {
+              const ratio = (b / baseAmp * 100).toFixed(0);
+              const cls   = b > baseAmp ? 'danger' : b > baseAmp * 0.85 ? 'warning' : 'success';
+              const note  = b > baseAmp ? '⛔ 과대 — 전선 보호 불가' : b > baseAmp * 0.85 ? '⚠️ 허용 한도 근접' : '✅ 적합';
               return `<div class="result-row">
                 <span class="result-label">${b} A</span>
                 <span class="result-value ${cls}">${note} (${ratio}%)</span>
               </div>`;
             }).join('')}
           </div>
-          <div class="reference">※ 차단기 정격 ≤ 전선 보정 허용전류 기준 (KEC 212.4)<br>※ 연속 부하 회로는 차단기 정격의 80% 이하로 운용 권장</div>`;
+          <div class="reference">※ 차단기 정격 ≤ 전선 최대 허용전류 기준 (KEC 212.4)<br>※ 연속 부하 회로는 차단기 정격의 80% 이하로 운용 권장</div>`;
       }
     }
 
     // 초기화 이벤트
     document.addEventListener('DOMContentLoaded', () => {
-      // bwWireType 변경 시 굵기 목록 갱신
-      document.getElementById('bwWireType').addEventListener('change', initBwWireSize);
       initBwWireSize();
     });
     // ============================================================
