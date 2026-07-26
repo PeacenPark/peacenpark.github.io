@@ -1688,7 +1688,9 @@ function setupTabs() {
               <div class="result-label">③ 입력된 부하:</div>
               <div class="result-value">
                 <span class="highlight">${actualLoad.toFixed(1)} A</span>
-                ${loadUnit === 'kW' ? `<div class="sub">입력값: ${originalInputValue}</div>` : ''}
+                ${loadUnit === 'kW'
+                  ? `<div class="sub">입력값: ${originalInputValue}</div>`
+                  : `<div class="sub">환산: ${convertCurrentToPower(actualLoad, voltage).toFixed(1)} kW</div>`}
               </div>
             </div>
             ` : ''}
