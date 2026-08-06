@@ -16,11 +16,17 @@ service cloud.firestore {
       // 최초 가입 시 본인 uid로, approved:false 로만 생성 가능 (자기 자신을 승인 상태로 만들 수 없음)
       allow create: if request.auth != null &&
                        request.auth.uid == userId &&
-                       request.resource.data.approved == false &&
-                       request.resource.data.email == request.auth.token.email;
+                       request.resource.data.approved == false;
 
-      // 승인 여부 변경 등 수정/삭제는 관리자만 가능
-      allow update, delete: if isAdmin();
+      // 관리자는 모든 수정 가능 (승인/차단)
+      // 본인은 youtube, blog 필드만 수정 가능 (approved 등은 변경 불가)
+      allow update: if isAdmin() ||
+                       (request.auth != null &&
+                        request.auth.uid == userId &&
+                        request.resource.data.diff(resource.data)
+                          .affectedKeys().hasOnly(['youtube', 'blog']));
+
+      allow delete: if isAdmin();
     }
   }
 }

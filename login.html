@@ -57,7 +57,30 @@
   .status-box .icon{ font-size:40px; margin-bottom:12px; }
   .status-box h2{ font-size:17px; color:#1e3a5f; margin:0 0 8px; }
   .status-box p{ font-size:13px; color:#777; line-height:1.6; margin:0 0 20px; }
-  .btn-logout{ background:#eee; color:#555; }
+  .btn-logout{ background:#eee; color:#555; width:100%; }
+
+  /* 승인 조건 안내 */
+  .guide{ text-align:left; background:#f5f9ff; border:1px solid #dceafd; border-radius:10px;
+    padding:14px; margin-bottom:16px; }
+  .guide .g-title{ font-size:13px; font-weight:700; color:#1e3a5f; margin-bottom:8px; }
+  .guide ol{ margin:0 0 10px; padding-left:18px; }
+  .guide li{ font-size:12.5px; color:#555; line-height:1.75; }
+  .guide .note{ font-size:11.5px; color:#8a8a8a; line-height:1.6; margin:0; }
+  .links{ display:flex; gap:8px; margin-bottom:16px; }
+  .links a{ flex:1; padding:11px 6px; border-radius:8px; font-size:12.5px; font-weight:700;
+    text-decoration:none; color:#fff; text-align:center; }
+  .links a.yt{ background:#ff0000; }
+  .links a.blog{ background:#03c75a; }
+  .verify{ text-align:left; margin-bottom:16px; }
+  .verify label{ display:block; font-size:12px; color:#666; margin:0 0 5px; font-weight:600; }
+  .verify input{ margin-bottom:10px; }
+  .btn-save{ background:var(--primary-color); color:#fff; width:100%; margin-bottom:10px; }
+  .btn-save:hover{ background:var(--hover-color); }
+  #saveMsg{ font-size:12px; min-height:16px; margin-bottom:10px; }
+  #saveMsg.ok{ color:#1e7e34; } #saveMsg.error{ color:#d9534f; }
+  .signup-notice{ background:#fffaf0; border:1px solid #ffe6b8; border-radius:8px;
+    padding:10px 12px; font-size:12px; color:#8a6d3b; line-height:1.6; text-align:left;
+    margin-bottom:4px; }
 </style>
 </head>
 <body>
@@ -80,6 +103,10 @@
       </form>
 
       <form id="signupForm">
+        <div class="signup-notice">
+          두꺼비집 필드노트는 <b>채널 구독자분들께 무료로 제공</b>됩니다.<br>
+          가입 후 안내에 따라 구독·이웃추가를 완료해주시면 확인 후 승인해드립니다.
+        </div>
         <input type="email" id="signupEmail" placeholder="이메일" required autocomplete="email">
         <input type="password" id="signupPw" placeholder="비밀번호 (6자 이상)" required autocomplete="new-password" minlength="6">
         <input type="password" id="signupPw2" placeholder="비밀번호 확인" required autocomplete="new-password" minlength="6">
@@ -98,9 +125,37 @@
     <!-- 승인 대기 / 로그인 후 상태 -->
     <div id="statusView" class="status-box">
       <div class="icon">⏳</div>
-      <h2 id="statusTitle">승인 대기중입니다</h2>
-      <p id="statusDesc">가입 신청이 접수되었습니다. 관리자 승인 후 이용하실 수 있습니다. 승인이 필요하시면 운영자에게 문의해주세요.</p>
-      <button id="logoutBtn" class="btn-logout">로그아웃</button>
+      <h2>승인 대기중입니다</h2>
+      <p style="margin-bottom:16px;">가입 신청이 접수되었습니다.<br>아래를 완료해주시면 확인 후 승인해드립니다. (보통 하루 이내)</p>
+
+      <div class="guide">
+        <div class="g-title">승인 조건</div>
+        <ol>
+          <li>유튜브 <b>두꺼비집</b> 채널 구독</li>
+          <li>네이버 블로그 <b>이웃추가</b></li>
+        </ol>
+        <p class="note">영상 좋아요와 블로그 댓글은 채널 운영에 큰 힘이 됩니다. 감사합니다!</p>
+      </div>
+
+      <div class="links">
+        <a class="yt" href="https://youtube.com/channel/UCpenMdM1uD4KQqVgrsAmfjw" target="_blank" rel="noopener">유튜브 채널 가기</a>
+        <a class="blog" href="https://blog.naver.com/ebenezerelec" target="_blank" rel="noopener">블로그 가기</a>
+      </div>
+
+      <div class="verify">
+        <label for="ytName">유튜브 닉네임</label>
+        <input type="text" id="ytName" placeholder="구독하신 유튜브 계정 이름">
+        <label for="blogId">네이버 블로그 아이디</label>
+        <input type="text" id="blogId" placeholder="이웃추가하신 블로그 아이디">
+      </div>
+      <div id="saveMsg"></div>
+      <button id="saveBtn" class="btn-save" type="button">저장하고 승인 요청</button>
+      <p class="note" style="font-size:11.5px;color:#8a8a8a;line-height:1.6;margin:0 0 16px;">
+        대조를 위해 실제 사용하신 닉네임/아이디를 정확히 입력해주세요.<br>
+        승인이 완료되면 이 화면 대신 계산기가 바로 열립니다.
+      </p>
+
+      <button id="logoutBtn" class="btn-logout" type="button">로그아웃</button>
     </div>
 
   </div>
@@ -191,9 +246,35 @@
       email: user.email,
       provider: provider,
       approved: false,
+      youtube: "",
+      blog: "",
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
   }
+
+  // 승인 대기 화면: 유튜브/블로그 정보 저장
+  document.getElementById("saveBtn").addEventListener("click", function () {
+    var user = auth.currentUser;
+    if (!user) return;
+    var saveMsg = document.getElementById("saveMsg");
+    var btn = this;
+    btn.disabled = true;
+    saveMsg.textContent = "저장 중...";
+    saveMsg.className = "";
+
+    db.collection("users").doc(user.uid).update({
+      youtube: document.getElementById("ytName").value.trim(),
+      blog: document.getElementById("blogId").value.trim()
+    }).then(function () {
+      saveMsg.textContent = "저장되었습니다. 확인 후 승인해드리겠습니다.";
+      saveMsg.className = "ok";
+      btn.disabled = false;
+    }).catch(function (err) {
+      saveMsg.textContent = "저장 실패: " + err.message;
+      saveMsg.className = "error";
+      btn.disabled = false;
+    });
+  });
 
   document.getElementById("logoutBtn").addEventListener("click", function () {
     auth.signOut();
@@ -258,6 +339,11 @@
       } else {
         authView.style.display = "none";
         statusView.classList.add("active");
+        // 이전에 입력한 값이 있으면 채워넣기
+        if (doc.exists) {
+          document.getElementById("ytName").value = doc.data().youtube || "";
+          document.getElementById("blogId").value = doc.data().blog || "";
+        }
       }
     });
   });
