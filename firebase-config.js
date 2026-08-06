@@ -9,13 +9,12 @@
 // 실제 접근 제어는 Firestore 보안 규칙(firestore.rules)이 담당합니다).
 // ============================================================
 window.firebaseConfig = {
-  apiKey: "AIzaSyDQ9jeG9PdrKpwZiyJOyFCeWmGmE7D_YKw",
-  authDomain: "eleccalc-909a7.firebaseapp.com",
-  projectId: "eleccalc-909a7",
-  storageBucket: "eleccalc-909a7.firebasestorage.app",
-  messagingSenderId: "861602277525",
-  appId: "1:861602277525:web:f54fe35128b50daed8939c",
-  measurementId: "G-VL5YCH478H"
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
 };
 
 // 관리자로 지정할 이메일 목록 (admin.html 접근 및 승인 권한)

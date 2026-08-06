@@ -12,8 +12,15 @@ const urlsToCache = [
   '/conduit-size.html',
   '/voltage-drop.html',
   '/moltal.html',
-  '/earth.html'
+  '/earth.html',
+  // 인증 관련 페이지/스크립트
+  '/login.html',
+  '/auth-guard.js',
+  '/firebase-config.js'
 ];
+
+// 인증 관련 파일은 항상 최신 버전을 우선 가져옴 (관리자 승인 로직 등이 바뀔 수 있으므로)
+const NETWORK_FIRST = ['index.html', 'login.html', 'admin.html', 'auth-guard.js', 'firebase-config.js'];
 
 // 서비스 워커 설치 및 캐시 파일 선정
 self.addEventListener('install', function(event) {
@@ -31,8 +38,8 @@ self.addEventListener('install', function(event) {
 
 // 캐시 또는 네트워크에서 리소스 가져오기
 self.addEventListener('fetch', function(event) {
-  // index.html은 항상 네트워크에서 최신 버전 가져오기
-  if (event.request.url.includes('index.html') || event.request.url.endsWith('/')) {
+  // 인증 관련 파일들은 항상 네트워크에서 최신 버전 가져오기
+  if (NETWORK_FIRST.some(function(name) { return event.request.url.includes(name); }) || event.request.url.endsWith('/')) {
     event.respondWith(
       fetch(event.request).catch(function() {
         return caches.match(event.request);
