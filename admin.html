@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>사용자 승인 관리 - 전기(공사) 계산기</title>
+<style>
+  :root{ --primary-color:#4a90e2; --light-bg:#ebf5ff; }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; background:var(--light-bg); font-family:'Segoe UI','Noto Sans KR',sans-serif;
+    color:#333; padding:24px 16px;
+  }
+  .wrap{ max-width:900px; margin:0 auto; }
+  h1{ font-size:20px; color:#1e3a5f; margin-bottom:4px; }
+  p.sub{ color:#777; font-size:13px; margin-top:0; margin-bottom:20px; }
+  .tabs{ display:flex; gap:8px; margin-bottom:16px; }
+  .tab-btn{
+    padding:8px 16px; border-radius:20px; border:1px solid #ddd; background:#fff;
+    cursor:pointer; font-size:13px; color:#555;
+  }
+  .tab-btn.active{ background:var(--primary-color); color:#fff; border-color:var(--primary-color); }
+  table{ width:100%; border-collapse:collapse; background:#fff; border-radius:10px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+  th, td{ padding:12px 14px; text-align:left; font-size:13px; border-bottom:1px solid #f0f0f0; }
+  th{ background:#f7fafd; color:#555; font-weight:600; }
+  tr:last-child td{ border-bottom:none; }
+  .badge{ padding:3px 9px; border-radius:12px; font-size:11px; font-weight:600; }
+  .badge.pending{ background:#fff3cd; color:#946200; }
+  .badge.approved{ background:#d4edda; color:#1e7e34; }
+  button.action{
+    padding:6px 12px; border:none; border-radius:6px; font-size:12px; cursor:pointer; font-weight:600; margin-right:6px;
+  }
+  .approve{ background:#4a90e2; color:#fff; }
+  .revoke{ background:#eee; color:#555; }
+  #empty{ text-align:center; padding:40px 0; color:#999; font-size:13px; }
+  #gate{ text-align:center; padding:60px 20px; }
+  #adminBar{ display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; font-size:13px; color:#777; }
+  #logoutBtn{ background:#eee; border:none; padding:6px 14px; border-radius:6px; cursor:pointer; font-size:12px; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div id="gate">인증 확인 중...</div>
+
+    <div id="panel" style="display:none;">
+      <div id="adminBar">
+        <span id="adminEmail"></span>
+        <button id="logoutBtn">로그아웃</button>
+      </div>
+      <h1>사용자 승인 관리</h1>
+      <p class="sub">가입한 사용자를 승인하거나 승인을 취소할 수 있습니다.</p>
+
+      <div class="tabs">
+        <div class="tab-btn active" data-filter="pending">승인 대기</div>
+        <div class="tab-btn" data-filter="approved">승인됨</div>
+        <div class="tab-btn" data-filter="all">전체</div>
+      </div>
+
+      <table>
+        <thead>
+          <tr><th>이메일</th><th>로그인 방식</th><th>가입일</th><th>상태</th><th>작업</th></tr>
+        </thead>
+        <tbody id="userTbody"></tbody>
+      </table>
+      <div id="empty" style="display:none;">해당하는 사용자가 없습니다.</div>
+    </div>
+  </div>
+
+<script src="firebase-config.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script>
+  firebase.initializeApp(window.firebaseConfig);
+  var auth = firebase.auth();
+  var db = firebase.firestore();
+  var ADMIN_EMAILS = window.ADMIN_EMAILS || [];
+
+  var gate = document.getElementById("gate");
+  var panel = document.getElementById("panel");
+  var tbody = document.getElementById("userTbody");
+  var empty = document.getElementById("empty");
+  var currentFilter = "pending";
+  var allUsers = [];
+
+  auth.onAuthStateChanged(function (user) {
+    if (!user) {
+      location.replace("login.html?redirect=" + encodeURIComponent(location.pathname));
+      return;
+    }
+    if (ADMIN_EMAILS.indexOf(user.email) === -1) {
+      gate.textContent = "관리자만 접근할 수 있는 페이지입니다.";
+      return;
+    }
+    document.getElementById("adminEmail").textContent = user.email;
+    gate.style.display = "none";
+    panel.style.display = "block";
+    loadUsers();
+  });
+
+  document.getElementById("logoutBtn").addEventListener("click", function () {
+    auth.signOut().then(function () { location.href = "login.html"; });
+  });
+
+  document.querySelectorAll(".tab-btn").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      document.querySelectorAll(".tab-btn").forEach(function (b) { b.classList.remove("active"); });
+      btn.classList.add("active");
+      currentFilter = btn.dataset.filter;
+      render();
+    });
+  });
+
+  function loadUsers() {
+    db.collection("users").orderBy("createdAt", "desc").onSnapshot(function (snap) {
+      allUsers = snap.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); });
+      render();
+    }, function (err) {
+      console.error(err);
+      tbody.innerHTML = "";
+      empty.style.display = "block";
+      empty.textContent = "목록을 불러오지 못했습니다: " + err.message;
+    });
+  }
+
+  function render() {
+    var list = allUsers.filter(function (u) {
+      if (currentFilter === "pending") return u.approved !== true;
+      if (currentFilter === "approved") return u.approved === true;
+      return true;
+    });
+
+    if (list.length === 0) {
+      tbody.innerHTML = "";
+      empty.style.display = "block";
+      return;
+    }
+    empty.style.display = "none";
+
+    tbody.innerHTML = list.map(function (u) {
+      var date = u.createdAt && u.createdAt.toDate ? u.createdAt.toDate().toLocaleDateString("ko-KR") : "-";
+      var isApproved = u.approved === true;
+      return (
+        "<tr>" +
+        "<td>" + escapeHtml(u.email || "-") + "</td>" +
+        "<td>" + (u.provider === "google" ? "구글" : "이메일") + "</td>" +
+        "<td>" + date + "</td>" +
+        "<td><span class='badge " + (isApproved ? "approved" : "pending") + "'>" + (isApproved ? "승인됨" : "대기중") + "</span></td>" +
+        "<td>" +
+        (isApproved
+          ? "<button class='action revoke' data-id='" + u.id + "' data-op='revoke'>승인 취소</button>"
+          : "<button class='action approve' data-id='" + u.id + "' data-op='approve'>승인</button>") +
+        "</td>" +
+        "</tr>"
+      );
+    }).join("");
+
+    tbody.querySelectorAll("button.action").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var id = btn.dataset.id;
+        var approve = btn.dataset.op === "approve";
+        btn.disabled = true;
+        db.collection("users").doc(id).update({ approved: approve }).catch(function (err) {
+          alert("처리 실패: " + err.message);
+          btn.disabled = false;
+        });
+      });
+    });
+  }
+
+  function escapeHtml(str) {
+    var div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+  }
+</script>
+</body>
+</html>

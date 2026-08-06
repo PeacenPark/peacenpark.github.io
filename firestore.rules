@@ -1,0 +1,26 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 관리자 이메일 목록 - firebase-config.js 의 ADMIN_EMAILS 와 동일하게 유지하세요.
+    function isAdmin() {
+      return request.auth != null &&
+             request.auth.token.email in ["jisa861@gmail.com"];
+    }
+
+    match /users/{userId} {
+      // 본인 문서 또는 관리자만 읽기 가능
+      allow read: if request.auth != null &&
+                     (request.auth.uid == userId || isAdmin());
+
+      // 최초 가입 시 본인 uid로, approved:false 로만 생성 가능 (자기 자신을 승인 상태로 만들 수 없음)
+      allow create: if request.auth != null &&
+                       request.auth.uid == userId &&
+                       request.resource.data.approved == false &&
+                       request.resource.data.email == request.auth.token.email;
+
+      // 승인 여부 변경 등 수정/삭제는 관리자만 가능
+      allow update, delete: if isAdmin();
+    }
+  }
+}
