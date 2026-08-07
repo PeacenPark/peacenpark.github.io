@@ -1088,41 +1088,45 @@
     //   In ≤ IZ 를 만족하면 조건 ②는 자동으로 충족됩니다.
     //   → 따라서 "차단기 정격은 전선 허용전류 이하"가 유일한 선정 기준입니다.
     //
-    //   반환값 { rated, rec80, status, message }
-    //     status: 'ok' | 'upsize'(전선 상향 필요) | 'none'(적정 규격 없음)
+    //   반환값 { rated, rec80, maxAllowed, status, message }
+    //     rated      : 조건을 모두 만족하는 추천 정격 (없으면 null)
+    //     maxAllowed : 전선 보호가 가능한 최대 정격 (In ≤ IZ 중 최대)
+    //                  → 조건 불만족 시에도 참고값으로 항상 제공
+    //     status     : 'ok' | 'upsize'(전선 상향 필요) | 'none'(적정 규격 없음)
     // ============================================================
     function selectBreaker(Iz, Ib) {
       const hasIb = (typeof Ib === 'number' && isFinite(Ib) && Ib > 0);
 
       // 조건 ①의 상한: In ≤ IZ
       const underIz = breakerSizes.filter(b => b <= Iz);
+      const maxAllowed = underIz.length > 0 ? underIz[underIz.length - 1] : null;
+      const rec80 = underIz.filter(b => b <= Math.floor(Iz * 0.8)).pop() || null;
 
       if (underIz.length === 0) {
-        return { rated: null, rec80: null, status: 'none',
-                 message: '허용전류보다 작은 표준 차단기가 없습니다. 전선 굵기를 조정하세요.' };
+        return { rated: null, rec80: null, maxAllowed: null, status: 'none',
+                 message: `허용전류(${Iz.toFixed(1)}A)가 최소 표준 차단기(${breakerSizes[0]}A)보다 작습니다.` };
       }
 
       // 설계전류가 주어진 경우: 조건 ①의 하한 In ≥ IB 도 만족해야 함
       if (hasIb) {
         if (Ib > Iz) {
-          return { rated: null, rec80: null, status: 'upsize',
+          return { rated: null, rec80: rec80, maxAllowed: maxAllowed, status: 'upsize',
                    message: `부하전류(${Ib.toFixed(1)}A)가 허용전류(${Iz.toFixed(1)}A)를 초과합니다. 전선 굵기를 상향하세요.` };
         }
         const fit = underIz.filter(b => b >= Ib);
         if (fit.length === 0) {
-          return { rated: null, rec80: null, status: 'upsize',
-                   message: `IB(${Ib.toFixed(1)}A) ≤ In ≤ IZ(${Iz.toFixed(1)}A) 를 만족하는 표준 차단기가 없습니다. 전선 굵기를 상향하세요.` };
+          // 부하와 허용전류 사이에 표준 규격이 없는 구간
+          // (예: 부하 70A, 허용 74A → 60A는 부하 미달, 75A는 전선 초과)
+          return { rated: null, rec80: rec80, maxAllowed: maxAllowed, status: 'upsize',
+                   message: `부하 ${Ib.toFixed(1)}A ~ 허용 ${Iz.toFixed(1)}A 사이에 표준 차단기 규격이 없습니다. ` +
+                            `${maxAllowed}A는 부하에 미달하고 그 위 규격은 전선을 보호하지 못하므로, 전선 굵기를 한 단계 올리세요.` };
         }
         // 부하를 덮는 가장 작은 규격 = 보호 성능이 가장 좋은 선택
-        const rated = fit[0];
-        const rec80 = underIz.filter(b => b <= Math.floor(Iz * 0.8)).pop() || null;
-        return { rated: rated, rec80: rec80, status: 'ok', message: '' };
+        return { rated: fit[0], rec80: rec80, maxAllowed: maxAllowed, status: 'ok', message: '' };
       }
 
       // 설계전류 미입력: 허용전류를 최대한 활용하는 규격
-      const rated = underIz[underIz.length - 1];
-      const rec80 = underIz.filter(b => b <= Math.floor(Iz * 0.8)).pop() || null;
-      return { rated: rated, rec80: rec80, status: 'ok', message: '' };
+      return { rated: maxAllowed, rec80: rec80, maxAllowed: maxAllowed, status: 'ok', message: '' };
     }
 
     // 접지선 사이즈 (㎟)
@@ -2296,14 +2300,23 @@ const availableSizes = Object.keys(resistance['F-CV'])
             const item = data[type];
             // KEC 212.4.1 (IB ≤ In ≤ IZ) — 다른 탭과 동일한 공용 함수 사용
             const bkSel = selectBreaker(item.current, currentNeeded);
-            const recommendedBreaker = bkSel.rated !== null ? bkSel.rated : '-';
+
+            // 조건을 만족하는 규격이 없으면(부하~허용전류 사이에 표준 규격이 없는 구간)
+            // 빈칸 대신 전선 보호 가능한 최대 정격을 참고값으로 보여주고 사유를 표시
+            const breakerAmpForCalc = bkSel.rated !== null ? bkSel.rated : bkSel.maxAllowed;
+            const breakerCellHtml = bkSel.rated !== null
+              ? `${bkSel.rated}`
+              : (bkSel.maxAllowed !== null
+                  ? `<span class="warning" title="${bkSel.message}">${bkSel.maxAllowed} <span style="font-size:0.8em;">▲</span></span>
+                     <div style="font-size:0.78em;color:#c0392b;line-height:1.3;">부하 미달<br>굵기 상향 필요</div>`
+                  : `<span class="danger" title="${bkSel.message}">규격 없음</span>`);
             
             // 전력 용량 계산 (전선 허용전류 기준 - 이론값)
             const powerCapacity = convertCurrentToPower(item.current, voltageType);
 
             // 실사용 전력: 차단기 정격 기준 (전선이 굵어도 차단기가 상한이 됨)
-            const bkPower   = recommendedBreaker !== '-' ? convertCurrentToPower(recommendedBreaker, voltageType) : null;
-            const bkPower80 = recommendedBreaker !== '-' ? convertCurrentToPower(recommendedBreaker * 0.8, voltageType) : null;
+            const bkPower   = breakerAmpForCalc !== null ? convertCurrentToPower(breakerAmpForCalc, voltageType) : null;
+            const bkPower80 = breakerAmpForCalc !== null ? convertCurrentToPower(breakerAmpForCalc * 0.8, voltageType) : null;
             
             const row = document.createElement('tr');
             row.className = 'comparison-row';
@@ -2322,7 +2335,7 @@ const availableSizes = Object.keys(resistance['F-CV'])
                             item.voltageDropPercent <= MAX_VOLTAGE_DROP_PERCENT ? 'warning' : 'danger'}">
                   ${item.voltageDropPercent.toFixed(2)}
                 </td>` : ''}
-              <td>${recommendedBreaker}</td>
+              <td>${breakerCellHtml}</td>
               <td>${powerCapacity.toFixed(1)}</td>
               <td>${bkPower !== null
                     ? `<strong>${bkPower.toFixed(1)}</strong><div style="font-size:0.82em;color:#666;">80%: ${bkPower80.toFixed(1)}</div>`
@@ -2335,6 +2348,18 @@ const availableSizes = Object.keys(resistance['F-CV'])
           table.appendChild(tbody);
           tableWrapper.appendChild(table);
           container.appendChild(tableWrapper);
+
+          // 표 범례
+          const legend = document.createElement('div');
+          legend.className = 'reference';
+          legend.style.cssText = 'margin-top:10px;font-size:0.85em;line-height:1.7;';
+          legend.innerHTML =
+            '※ 차단기 선정 기준: KEC 212.4.1 — IB(부하전류) ≤ In(차단기 정격) ≤ IZ(전선 허용전류)<br>' +
+            '※ <span class="warning">▲ 부하 미달</span> : 부하전류와 허용전류 사이에 해당하는 표준 차단기 규격이 없는 경우입니다. ' +
+            '표시된 정격은 전선을 보호할 수 있는 최대값이지만 부하를 감당하지 못하므로, 전선 굵기를 한 단계 올려야 합니다.<br>' +
+            '※ 실사용 전력은 차단기 정격 기준이며, 연속부하는 정격의 80% 이하 운용을 권장합니다.';
+          container.appendChild(legend);
+
           return container;
         };
 
