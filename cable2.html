@@ -983,6 +983,24 @@
             </div>
           </div>
 
+          <!-- 전원 종류 (전력량 산출용) -->
+          <div class="input-row">
+            <div class="input-group">
+              <label for="bwVoltageType">
+                전원 종류
+                <span class="tooltip">
+                  <span class="tooltip-icon">?</span>
+                  <span class="tooltip-text">사용 가능 전력량(kW)을 계산하기 위한 전원 종류입니다.</span>
+                </span>
+              </label>
+              <select id="bwVoltageType">
+                <option value="단상">단상 220V</option>
+                <option value="삼상">삼상 380V</option>
+                <option value="직류">직류 110V</option>
+              </select>
+            </div>
+          </div>
+
           <div class="bottom">
             <button id="bwCalcBtn" onclick="calcBreakerWire()">최적 선정</button>
           </div>
@@ -1586,23 +1604,26 @@ function setupTabs() {
         }
         
         // 차단기 계산: 차단기 ≤ 허용전류 (KEC 212.4 기준)
+        // 차단기는 허용전류 이하여야 함
+        const validBreakers = breakerSizes.filter(b => b <= correctedCurrent);
+        const optBreaker = validBreakers.length > 0 ? validBreakers[validBreakers.length - 1] : null;
+        const rec80 = breakerSizes.filter(b => b <= Math.floor(correctedCurrent * 0.8)).pop();
+
         let breakerText;
         if (hasLoad && actualLoad > correctedCurrent) {
           breakerText = `<span class="danger">부하 전류 초과 - 케이블 업사이징 필요</span>`;
+        } else if (optBreaker) {
+          breakerText = `<span class="success">${optBreaker} A</span>
+            <div class="sub">- 허용전류(${correctedCurrent}A) 이하 최대 규격</div>
+            ${rec80 ? `<div class="sub">- 연속부하 권장(80%): ${rec80} A</div>` : ''}`;
         } else {
-          // 차단기는 허용전류 이하여야 함
-          const validBreakers = breakerSizes.filter(b => b <= correctedCurrent);
-          const optBreaker = validBreakers.length > 0 ? validBreakers[validBreakers.length - 1] : null;
-          const rec80 = breakerSizes.filter(b => b <= Math.floor(correctedCurrent * 0.8)).pop();
-
-          if (optBreaker) {
-            breakerText = `<span class="success">${optBreaker} A</span>
-              <div class="sub">- 허용전류(${correctedCurrent}A) 이하 최대 규격</div>
-              ${rec80 ? `<div class="sub">- 연속부하 권장(80%): ${rec80} A</div>` : ''}`;
-          } else {
-            breakerText = `<span class="danger">적정 차단기 없음 – 전선 굵기를 상향하세요</span>`;
-          }
+          breakerText = `<span class="danger">적정 차단기 없음 – 전선 굵기를 상향하세요</span>`;
         }
+
+        // 차단기 정격 기준 사용 가능 전력량
+        // 전선이 아무리 굵어도 차단기 정격을 넘는 전력은 사용할 수 없으므로 함께 표기
+        const breakerPower    = optBreaker ? convertCurrentToPower(optBreaker, voltage) : null;
+        const breakerPower80  = optBreaker ? convertCurrentToPower(optBreaker * 0.8, voltage) : null;
         
         // 전압 값
         const voltageVal = voltage === "단상" ? 220 : voltage === "삼상" ? 380 : 110;
@@ -1708,7 +1729,7 @@ function setupTabs() {
             </div>
             
             <div class="result-row">
-              <div class="result-label">${hasLoad ? '⑤' : '④'} 가능 전력량:</div>
+              <div class="result-label">${hasLoad ? '⑤' : '④'} 가능 전력량 (전선 기준):</div>
               <div class="result-value"><span class="highlight">${contractPower.toFixed(1)} kW</span>
                 <div class="sub">
                   계산식: ${
@@ -1718,13 +1739,36 @@ function setupTabs() {
                       ? `√3 × ${voltageVal}V × ${correctedCurrent}A = ${(Math.sqrt(3) * voltageVal * correctedCurrent).toFixed(1)}W`
                       : `${voltageVal}V × ${correctedCurrent}A = ${(voltageVal * correctedCurrent).toFixed(1)}W`
                   }
-                  <br>(보정 후 허용 전류 기준)
+                  <br>(보정 후 허용 전류 기준 · 전선만 고려한 이론값)
                 </div>
               </div>
             </div>
-            
+
             <div class="result-row">
-              <div class="result-label">${hasLoad ? '⑥' : '⑤'} 접지선 굵기:</div>
+              <div class="result-label">${hasLoad ? '⑥' : '⑤'} 실사용 가능 전력량 (차단기 기준):</div>
+              <div class="result-value">
+                ${optBreaker ? `
+                  <span class="highlight">${breakerPower.toFixed(1)} kW</span>
+                  <div class="sub">- 차단기 ${optBreaker}A 정격 기준 최대값</div>
+                  <div class="sub">- 연속부하 권장(정격 80%): <strong>${breakerPower80.toFixed(1)} kW</strong> (${(optBreaker * 0.8).toFixed(0)}A)</div>
+                  <div class="sub">
+                    계산식: ${
+                      voltage === "단상"
+                        ? `${voltageVal}V × ${optBreaker}A`
+                        : voltage === "삼상"
+                        ? `√3 × ${voltageVal}V × ${optBreaker}A`
+                        : `${voltageVal}V × ${optBreaker}A`
+                    } = ${(breakerPower * 1000).toFixed(1)}W
+                  </div>
+                  <div class="sub" style="color:#c0392b;">
+                    ※ 전선이 굵어도 차단기가 먼저 트립되므로, 실제 쓸 수 있는 전력은 이 값이 기준입니다.
+                  </div>
+                ` : `<span class="danger">차단기 선정 불가 – 전선 굵기를 상향하세요</span>`}
+              </div>
+            </div>
+
+            <div class="result-row">
+              <div class="result-label">${hasLoad ? '⑦' : '⑥'} 접지선 굵기:</div>
               <div class="result-value"><span class="highlight">${groundSize}</span>
                 <div class="sub">기준: 16㎟ 이하 동일, 16~35㎟는 16㎟, 35㎟ 초과는 1/2</div>
               </div>
@@ -2194,7 +2238,8 @@ const availableSizes = Object.keys(resistance['F-CV'])
               <th>허용 전류 (A)</th>
               ${showVoltageDrop ? '<th>전압 강하 (%)</th>' : ''}
               <th>추천 차단기 (A)</th>
-              <th>전력 용량 (kW)</th>
+              <th>전력 용량 (kW)<br><span style="font-weight:400;font-size:0.85em;">전선 기준</span></th>
+              <th>실사용 전력 (kW)<br><span style="font-weight:400;font-size:0.85em;">차단기 기준 · 80%</span></th>
             </tr>
           `;
           table.appendChild(thead);
@@ -2207,8 +2252,12 @@ const availableSizes = Object.keys(resistance['F-CV'])
             const maxBreaker = Math.floor(item.current * 1.25);
             const recommendedBreaker = breakerSizes.find(a => a >= currentNeeded && a <= maxBreaker) || '-';
             
-            // 전력 용량 계산
+            // 전력 용량 계산 (전선 허용전류 기준 - 이론값)
             const powerCapacity = convertCurrentToPower(item.current, voltageType);
+
+            // 실사용 전력: 차단기 정격 기준 (전선이 굵어도 차단기가 상한이 됨)
+            const bkPower   = recommendedBreaker !== '-' ? convertCurrentToPower(recommendedBreaker, voltageType) : null;
+            const bkPower80 = recommendedBreaker !== '-' ? convertCurrentToPower(recommendedBreaker * 0.8, voltageType) : null;
             
             const row = document.createElement('tr');
             row.className = 'comparison-row';
@@ -2229,6 +2278,9 @@ const availableSizes = Object.keys(resistance['F-CV'])
                 </td>` : ''}
               <td>${recommendedBreaker}</td>
               <td>${powerCapacity.toFixed(1)}</td>
+              <td>${bkPower !== null
+                    ? `<strong>${bkPower.toFixed(1)}</strong><div style="font-size:0.82em;color:#666;">80%: ${bkPower80.toFixed(1)}</div>`
+                    : '-'}</td>
             `;
             
             tbody.appendChild(row);
@@ -2637,6 +2689,38 @@ const availableSizes = Object.keys(resistance['F-CV'])
       const resultDiv = document.getElementById('bwResult');
       resultDiv.style.display = 'block';
 
+      // 전력량 산출용 전원 종류
+      const bwVolt    = document.getElementById('bwVoltageType').value;
+      const bwVoltVal = bwVolt === "단상" ? 220 : bwVolt === "삼상" ? 380 : 110;
+      const bwFormula = amp => bwVolt === "삼상"
+        ? `√3 × ${bwVoltVal}V × ${amp}A`
+        : `${bwVoltVal}V × ${amp}A`;
+
+      // 차단기 정격 기준 사용 가능 전력량 블록 생성
+      const powerBlock = (amp) => {
+        const p100 = convertCurrentToPower(amp, bwVolt);
+        const p80  = convertCurrentToPower(amp * 0.8, bwVolt);
+        return `
+          <div class="result-section">
+            <h2>💡 사용 가능 전력량 (차단기 ${amp}A 기준)</h2>
+            <div class="result-row">
+              <span class="result-label">최대 (정격 100%)</span>
+              <span class="result-value"><strong>${p100.toFixed(1)} kW</strong></span>
+            </div>
+            <div class="result-row">
+              <span class="result-label">연속부하 권장 (80%)</span>
+              <span class="result-value success"><strong>${p80.toFixed(1)} kW</strong> <span class="sub">(${(amp * 0.8).toFixed(0)}A)</span></span>
+            </div>
+            <div class="result-row">
+              <span class="result-label">계산식</span>
+              <span class="result-value" style="font-size:0.88em">${bwFormula(amp)} = ${(p100 * 1000).toFixed(0)}W</span>
+            </div>
+            <div class="reference" style="margin-top:6px;">
+              ※ 전선이 아무리 굵어도 차단기가 먼저 동작하므로, 실제 사용 가능한 전력은 차단기 용량이 결정합니다.
+            </div>
+          </div>`;
+      };
+
       if (bwCurrentMode === 'breaker') {
         // ── 차단기 → 전선 선정 ──────────────────────────────────
         const breakerAmp = parseFloat(document.getElementById('bwBreakerAmp').value);
@@ -2681,6 +2765,7 @@ const availableSizes = Object.keys(resistance['F-CV'])
               <span class="result-value" style="font-size:0.88em">${options}</span>
             </div>
           </div>
+          ${powerBlock(breakerAmp)}
           <div class="reference">※ 전선 최대 허용전류 ≥ 차단기 정격 기준 (KEC 212.4)<br>※ 보정계수 미적용 — 설치환경에 따라 상향 선정 필요</div>`;
 
       } else {
@@ -2717,6 +2802,22 @@ const availableSizes = Object.keys(resistance['F-CV'])
             </div>
             ${nextBreaker ? `<div class="result-row"><span class="result-label">다음 상위 차단기</span><span class="result-value warning">${nextBreaker} A <span class="sub">(전선 교체 필요)</span></span></div>` : ''}
           </div>
+          ${optBreaker ? powerBlock(optBreaker) : ''}
+          ${optBreaker ? `
+          <div class="result-section">
+            <h2>📐 전선 기준 이론 전력량</h2>
+            <div class="result-row">
+              <span class="result-label">허용전류 ${baseAmp}A 기준</span>
+              <span class="result-value"><strong>${convertCurrentToPower(baseAmp, bwVolt).toFixed(1)} kW</strong></span>
+            </div>
+            <div class="result-row">
+              <span class="result-label">차단기 적용 시 차이</span>
+              <span class="result-value warning">
+                −${(convertCurrentToPower(baseAmp, bwVolt) - convertCurrentToPower(optBreaker, bwVolt)).toFixed(1)} kW
+                <span class="sub">(차단기 ${optBreaker}A로 제한됨)</span>
+              </span>
+            </div>
+          </div>` : ''}
           <div class="result-section">
             <h2>📊 표준 차단기 선택 가이드</h2>
             ${breakerSizes.filter(b => b <= baseAmp * 1.1).map(b => {
