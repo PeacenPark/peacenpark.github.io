@@ -641,6 +641,44 @@
     
     // 차단기 및 접지선 크기
     const breakerSizes = [15, 20, 30, 40, 50, 75, 100, 125, 150, 175, 200, 225, 250, 300];
+
+    // ============================================================
+    // 공용 차단기 선정 함수 — KEC 212.4.1 기준
+    //   조건 ①  IB ≤ In ≤ IZ     (식 212.4-1)
+    //   조건 ②  I2 ≤ 1.45 × IZ   (식 212.4-2)
+    //     · IB : 설계전류(부하전류)   · In : 차단기 정격전류
+    //     · IZ : 케이블 허용전류      · I2 : 차단기 규약동작전류
+    //   IEC 60898 배선용 차단기는 I2 = 1.45 In 이므로
+    //   In ≤ IZ 를 만족하면 조건 ②는 자동 충족됩니다.
+    //   ※ 과거의 "허용전류 125% 이하" 방식은 KEC 기준과 맞지 않아 폐기했습니다.
+    // ============================================================
+    function selectBreaker(Iz, Ib) {
+      const hasIb = (typeof Ib === 'number' && isFinite(Ib) && Ib > 0);
+      const underIz = breakerSizes.filter(b => b <= Iz && b !== 65);
+
+      if (underIz.length === 0) {
+        return { rated: null, rec80: null, status: 'none',
+                 message: '허용전류보다 작은 표준 차단기가 없습니다. 전선 굵기를 조정하세요.' };
+      }
+
+      if (hasIb) {
+        if (Ib > Iz) {
+          return { rated: null, rec80: null, status: 'upsize',
+                   message: `부하전류(${Ib.toFixed(1)}A)가 허용전류(${Iz.toFixed(1)}A)를 초과합니다. 전선 굵기를 상향하세요.` };
+        }
+        const fit = underIz.filter(b => b >= Ib);
+        if (fit.length === 0) {
+          return { rated: null, rec80: null, status: 'upsize',
+                   message: `IB(${Ib.toFixed(1)}A) ≤ In ≤ IZ(${Iz.toFixed(1)}A) 를 만족하는 표준 차단기가 없습니다. 전선 굵기를 상향하세요.` };
+        }
+        return { rated: fit[0], rec80: underIz.filter(b => b <= Math.floor(Iz * 0.8)).pop() || null,
+                 status: 'ok', message: '' };
+      }
+
+      return { rated: underIz[underIz.length - 1],
+               rec80: underIz.filter(b => b <= Math.floor(Iz * 0.8)).pop() || null,
+               status: 'ok', message: '' };
+    }
     const groundSizes = [1.5, 2.5, 4, 6, 10, 16, 25, 35, 50, 70, 95, 120, 150, 185, 240, 300, 400, 500, 600];
 
     // 탭 전환 함수
@@ -769,24 +807,19 @@
       const coreCoef = coreFactor[cores];
       const correctedCurrent = Math.round(baseCurrent * installCoef * coreCoef * 10) / 10;
 
-      const minRange = Math.ceil(correctedCurrent);
-      const maxBreaker = Math.floor(correctedCurrent * 1.25);
-
-      let validBreakers = breakerSizes.filter(a => a >= correctedCurrent && a <= maxBreaker && a !== 65);
+      // KEC 212.4.1 기준 차단기 선정 (In ≤ IZ)
+      const bkSel = selectBreaker(correctedCurrent, null);
       let breakerText;
       let breakerStatus = 'normal';
-      
-      if (validBreakers.length > 0) {
-        breakerText = `${validBreakers.join(" / ")} A`;
-      } else {
-        const fallback = breakerSizes.filter(a => a <= maxBreaker && a !== 65).pop();
-        if (fallback) {
-          breakerText = `${fallback} A`;
-          breakerStatus = 'warning';
-        } else {
-          breakerText = `적정 차단기 없음`;
-          breakerStatus = 'error';
+
+      if (bkSel.rated) {
+        breakerText = `${bkSel.rated} A`;
+        if (bkSel.rec80 && bkSel.rec80 !== bkSel.rated) {
+          breakerText += ` <span style="font-size:0.85em;color:#666;">(연속부하 권장 ${bkSel.rec80} A)</span>`;
         }
+      } else {
+        breakerText = bkSel.message;
+        breakerStatus = 'error';
       }
 
       const voltageVal = voltage === "단상" ? 220 : 380;
@@ -857,7 +890,7 @@
             ${breakerText}
           </div>
           <div class="result-note">
-            추천 전류 범위: ${minRange}A ~ ${maxBreaker}A (보정후 허용전류 기준)
+            선정 조건: In ≤ IZ(${correctedCurrent}A) — KEC 212.4.1
           </div>
         </div>
         
@@ -901,7 +934,8 @@
           <div class="reference-title">KEC 기준 참고</div>
           <div class="reference-item">허용 전류: KEC 2021 표 3.2.1 기준</div>
           <div class="reference-item">접지선 산정: 16㎟ 이하 동일, 16~35㎟는 16㎟, 35㎟ 초과는 1/2</div>
-          <div class="reference-item">차단기: 전선 기준 허용 전류의 125% 이하</div>
+          <div class="reference-item">차단기: KEC 212.4.1 — IB ≤ In ≤ IZ (차단기 정격은 전선 허용전류 이하)</div>
+          <div class="reference-item">연속부하 회로는 차단기 정격의 80% 이하 운용 권장</div>
         </div>
       `;
     }
@@ -952,27 +986,25 @@
         HFIX: findSuitableCable('HFIX', requiredBaseCurrent)
       };
       
-      // 추천 브레이커 계산
-      const minBreakerSize = Math.ceil(current);
-      const maxBreakerSize = Math.floor(current * 1.25);
-      const recommendedBreakers = breakerSizes.filter(
-        size => size >= minBreakerSize && size <= maxBreakerSize && size !== 65
-      );
-      
+      // 추천 브레이커 계산 — KEC 212.4.1 (IB ≤ In ≤ IZ)
+      // 선정된 케이블의 허용전류를 IZ, 필요전류를 IB로 사용
+      // findSuitableCable은 보정 전 표(base) 허용전류를 돌려주므로 보정계수를 다시 곱해 IZ를 구함
+      const izForBreaker = (recommendations.CV && recommendations.CV.current)
+        ? recommendations.CV.current * installCoef * coreCoef
+        : current;
+      const bkSel = selectBreaker(izForBreaker, current);
+
       let breakerText;
       let breakerStatus = 'normal';
-      
-      if (recommendedBreakers.length > 0) {
-        breakerText = `${recommendedBreakers.join(" / ")} A`;
-      } else {
-        const fallback = breakerSizes.filter(size => size <= maxBreakerSize && size !== 65).pop();
-        if (fallback) {
-          breakerText = `${fallback} A`;
-          breakerStatus = 'warning';
-        } else {
-          breakerText = '적정 차단기 없음';
-          breakerStatus = 'error';
+
+      if (bkSel.rated) {
+        breakerText = `${bkSel.rated} A`;
+        if (bkSel.rec80 && bkSel.rec80 !== bkSel.rated) {
+          breakerText += ` <span style="font-size:0.85em;color:#666;">(연속부하 권장 ${bkSel.rec80} A)</span>`;
         }
+      } else {
+        breakerText = bkSel.message;
+        breakerStatus = 'error';
       }
       
       // 결과 표시
@@ -1014,7 +1046,7 @@
           <div class="recommendation-title">추천 차단기 ${getBreakerStatusTag(breakerStatus)}</div>
           <div class="recommendation-value">${breakerText}</div>
           <div class="recommendation-note">
-            추천 전류 범위: ${minBreakerSize}A ~ ${maxBreakerSize}A (허용전류 기준)
+            선정 조건: IB(${current.toFixed(1)}A) ≤ In ≤ IZ(${izForBreaker.toFixed(1)}A) — KEC 212.4.1
           </div>
         </div>
         

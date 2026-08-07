@@ -1077,7 +1077,54 @@
     
     // 차단기 규격 사이즈 (A)
     const breakerSizes = [15, 20, 30, 40, 50, 60, 75, 100, 125, 150, 175, 200, 225, 250, 300, 350, 400, 500, 600, 800];
-    
+
+    // ============================================================
+    // 공용 차단기 선정 함수 — KEC 212.4.1 기준 (전 탭 공통 적용)
+    //   조건 ①  IB ≤ In ≤ IZ     (식 212.4-1)
+    //   조건 ②  I2 ≤ 1.45 × IZ   (식 212.4-2)
+    //     · IB : 설계전류(부하전류)   · In : 차단기 정격전류
+    //     · IZ : 케이블 허용전류      · I2 : 차단기 규약동작전류
+    //   IEC 60898 배선용 차단기는 I2 = 1.45 In 이므로,
+    //   In ≤ IZ 를 만족하면 조건 ②는 자동으로 충족됩니다.
+    //   → 따라서 "차단기 정격은 전선 허용전류 이하"가 유일한 선정 기준입니다.
+    //
+    //   반환값 { rated, rec80, status, message }
+    //     status: 'ok' | 'upsize'(전선 상향 필요) | 'none'(적정 규격 없음)
+    // ============================================================
+    function selectBreaker(Iz, Ib) {
+      const hasIb = (typeof Ib === 'number' && isFinite(Ib) && Ib > 0);
+
+      // 조건 ①의 상한: In ≤ IZ
+      const underIz = breakerSizes.filter(b => b <= Iz);
+
+      if (underIz.length === 0) {
+        return { rated: null, rec80: null, status: 'none',
+                 message: '허용전류보다 작은 표준 차단기가 없습니다. 전선 굵기를 조정하세요.' };
+      }
+
+      // 설계전류가 주어진 경우: 조건 ①의 하한 In ≥ IB 도 만족해야 함
+      if (hasIb) {
+        if (Ib > Iz) {
+          return { rated: null, rec80: null, status: 'upsize',
+                   message: `부하전류(${Ib.toFixed(1)}A)가 허용전류(${Iz.toFixed(1)}A)를 초과합니다. 전선 굵기를 상향하세요.` };
+        }
+        const fit = underIz.filter(b => b >= Ib);
+        if (fit.length === 0) {
+          return { rated: null, rec80: null, status: 'upsize',
+                   message: `IB(${Ib.toFixed(1)}A) ≤ In ≤ IZ(${Iz.toFixed(1)}A) 를 만족하는 표준 차단기가 없습니다. 전선 굵기를 상향하세요.` };
+        }
+        // 부하를 덮는 가장 작은 규격 = 보호 성능이 가장 좋은 선택
+        const rated = fit[0];
+        const rec80 = underIz.filter(b => b <= Math.floor(Iz * 0.8)).pop() || null;
+        return { rated: rated, rec80: rec80, status: 'ok', message: '' };
+      }
+
+      // 설계전류 미입력: 허용전류를 최대한 활용하는 규격
+      const rated = underIz[underIz.length - 1];
+      const rec80 = underIz.filter(b => b <= Math.floor(Iz * 0.8)).pop() || null;
+      return { rated: rated, rec80: rec80, status: 'ok', message: '' };
+    }
+
     // 접지선 사이즈 (㎟)
     const groundSizes = [1.5, 2.5, 4, 6, 10, 16, 25, 35, 50, 70, 95, 120, 150, 185, 240, 300, 400, 500, 600];
     
@@ -1603,21 +1650,19 @@ function setupTabs() {
           `;
         }
         
-        // 차단기 계산: 차단기 ≤ 허용전류 (KEC 212.4 기준)
-        // 차단기는 허용전류 이하여야 함
-        const validBreakers = breakerSizes.filter(b => b <= correctedCurrent);
-        const optBreaker = validBreakers.length > 0 ? validBreakers[validBreakers.length - 1] : null;
-        const rec80 = breakerSizes.filter(b => b <= Math.floor(correctedCurrent * 0.8)).pop();
+        // 차단기 계산: KEC 212.4.1 (IB ≤ In ≤ IZ) — 공용 함수 사용
+        const bkSel = selectBreaker(correctedCurrent, hasLoad ? actualLoad : null);
+        const optBreaker = bkSel.rated;
+        const rec80 = bkSel.rec80;
 
         let breakerText;
-        if (hasLoad && actualLoad > correctedCurrent) {
-          breakerText = `<span class="danger">부하 전류 초과 - 케이블 업사이징 필요</span>`;
-        } else if (optBreaker) {
+        if (optBreaker) {
           breakerText = `<span class="success">${optBreaker} A</span>
-            <div class="sub">- 허용전류(${correctedCurrent}A) 이하 최대 규격</div>
+            <div class="sub">- IN ≤ 허용전류(${correctedCurrent}A) 조건 충족</div>
+            ${hasLoad ? `<div class="sub">- 부하전류(${actualLoad.toFixed(1)}A) 이상 최소 규격</div>` : `<div class="sub">- 허용전류 이하 최대 규격</div>`}
             ${rec80 ? `<div class="sub">- 연속부하 권장(80%): ${rec80} A</div>` : ''}`;
         } else {
-          breakerText = `<span class="danger">적정 차단기 없음 – 전선 굵기를 상향하세요</span>`;
+          breakerText = `<span class="danger">${bkSel.message}</span>`;
         }
 
         // 차단기 정격 기준 사용 가능 전력량
@@ -2249,8 +2294,9 @@ const availableSizes = Object.keys(resistance['F-CV'])
           
           for (const type in data) {
             const item = data[type];
-            const maxBreaker = Math.floor(item.current * 1.25);
-            const recommendedBreaker = breakerSizes.find(a => a >= currentNeeded && a <= maxBreaker) || '-';
+            // KEC 212.4.1 (IB ≤ In ≤ IZ) — 다른 탭과 동일한 공용 함수 사용
+            const bkSel = selectBreaker(item.current, currentNeeded);
+            const recommendedBreaker = bkSel.rated !== null ? bkSel.rated : '-';
             
             // 전력 용량 계산 (전선 허용전류 기준 - 이론값)
             const powerCapacity = convertCurrentToPower(item.current, voltageType);
@@ -2775,14 +2821,11 @@ const availableSizes = Object.keys(resistance['F-CV'])
         // 허용전류: F-CV 기준 고정
         const baseAmp = cableData['F-CV'][size];
 
-        // 차단기: ≤ 최대 허용전류 (전선 보호 원칙)
-        const validBreakers = breakerSizes.filter(b => b <= baseAmp);
-        const optBreaker    = validBreakers.length > 0 ? validBreakers[validBreakers.length - 1] : null;
-        const nextBreaker   = breakerSizes.find(b => b > (optBreaker || 0));
-
-        // 80% 부하율 권장
-        const r80    = Math.floor(baseAmp * 0.8);
-        const rec80  = breakerSizes.filter(b => b <= r80).pop();
+        // 차단기: KEC 212.4.1 (In ≤ IZ) — 다른 탭과 동일한 공용 함수 사용
+        const bwSel       = selectBreaker(baseAmp, null);
+        const optBreaker  = bwSel.rated;
+        const rec80       = bwSel.rec80;
+        const nextBreaker = breakerSizes.find(b => b > (optBreaker || 0));
 
         resultDiv.innerHTML = `
           <div class="result-section">
