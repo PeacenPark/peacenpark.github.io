@@ -1,4 +1,17 @@
-const CACHE_NAME = 'electric-calculator-v9';
+// ============================================================
+// 전기(공사) 계산기 서비스 워커
+// ------------------------------------------------------------
+// 전략:
+//  - HTML / JS / JSON  → 네트워크 우선 (오프라인일 때만 캐시 사용)
+//    → 파일을 새로 배포하면 새로고침만으로 즉시 반영됩니다.
+//  - 이미지 / 아이콘    → 캐시 우선 (거의 바뀌지 않고 용량이 크므로)
+//
+// 캐시 버전(CACHE_NAME)은 이제 매번 올릴 필요가 없습니다.
+// 아이콘 등 정적 리소스를 교체했을 때만 숫자를 올리세요.
+// ============================================================
+const CACHE_NAME = 'electric-calculator-v10';
+
+// 오프라인 대비용으로 미리 받아두는 파일들
 const urlsToCache = [
   '/icons/IMG_1900.png',
   '/icons/IMG_1901.png',
@@ -8,94 +21,105 @@ const urlsToCache = [
   '/icons/product2.jpg',
   '/manifest.json',
   // 계산기 페이지들
+  '/index.html',
+  '/cable.html',
   '/cable2.html',
   '/conduit-size.html',
   '/voltage-drop.html',
   '/moltal.html',
   '/earth.html',
-  // 인증 관련 페이지/스크립트
+  // 인증 관련
   '/login.html',
   '/auth-guard.js',
   '/firebase-config.js'
 ];
 
-// 인증 관련 파일은 항상 최신 버전을 우선 가져옴 (관리자 승인 로직 등이 바뀔 수 있으므로)
-const NETWORK_FIRST = ['index.html', 'login.html', 'admin.html', 'auth-guard.js', 'firebase-config.js'];
+// 항상 최신을 우선 확인할 확장자
+function isFreshFirst(url) {
+  // 페이지 이동(내비게이션)이거나 코드/문서 파일이면 네트워크 우선
+  return /\.(html|js|json)(\?|$)/i.test(url) || url.endsWith('/');
+}
 
-// 서비스 워커 설치 및 캐시 파일 선정
-self.addEventListener('install', function(event) {
-  // 즉시 활성화
+// ---------- 설치 ----------
+self.addEventListener('install', function (event) {
   self.skipWaiting();
-  
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(function(cache) {
-        console.log('캐시 열림');
-        return cache.addAll(urlsToCache);
-      })
+    caches.open(CACHE_NAME).then(function (cache) {
+      // 일부 파일이 없어도 설치가 실패하지 않도록 개별 처리
+      return Promise.all(
+        urlsToCache.map(function (url) {
+          return cache.add(url).catch(function () {
+            console.warn('캐시 실패(무시):', url);
+          });
+        })
+      );
+    })
   );
 });
 
-// 캐시 또는 네트워크에서 리소스 가져오기
-self.addEventListener('fetch', function(event) {
-  // 인증 관련 파일들은 항상 네트워크에서 최신 버전 가져오기
-  if (NETWORK_FIRST.some(function(name) { return event.request.url.includes(name); }) || event.request.url.endsWith('/')) {
+// ---------- 요청 처리 ----------
+self.addEventListener('fetch', function (event) {
+  var req = event.request;
+
+  // GET 이외(POST 등)나 외부 도메인 요청은 그대로 통과
+  if (req.method !== 'GET' || !req.url.startsWith(self.location.origin)) {
+    return;
+  }
+
+  // 1) HTML / JS / JSON → 네트워크 우선, 실패 시 캐시
+  if (req.mode === 'navigate' || isFreshFirst(req.url)) {
     event.respondWith(
-      fetch(event.request).catch(function() {
-        return caches.match(event.request);
-      })
+      fetch(req)
+        .then(function (response) {
+          if (response && response.status === 200 && response.type === 'basic') {
+            var copy = response.clone();
+            caches.open(CACHE_NAME).then(function (cache) {
+              cache.put(req, copy);
+            });
+          }
+          return response;
+        })
+        .catch(function () {
+          // 오프라인: 캐시에 있으면 그걸로, 없으면 메인 페이지로
+          return caches.match(req).then(function (cached) {
+            return cached || caches.match('/index.html');
+          });
+        })
     );
     return;
   }
-  
+
+  // 2) 그 외(이미지 등) → 캐시 우선, 없으면 네트워크
   event.respondWith(
-    caches.match(event.request)
-      .then(function(response) {
-        // 캐시에서 찾은 경우 반환
-        if (response) {
+    caches.match(req).then(function (cached) {
+      if (cached) return cached;
+      return fetch(req).then(function (response) {
+        if (!response || response.status !== 200 || response.type !== 'basic') {
           return response;
         }
-        
-        // 캐시에 없는 경우 네트워크 요청
-        return fetch(event.request).then(
-          function(response) {
-            // 유효한 응답이 아닌 경우 그대로 반환
-            if(!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
-            }
-            
-            // 중요: 응답을 복제하여 사용
-            // 응답 스트림은 한 번만 읽을 수 있기 때문
-            var responseToCache = response.clone();
-            
-            caches.open(CACHE_NAME)
-              .then(function(cache) {
-                cache.put(event.request, responseToCache);
-              });
-              
-            return response;
-          }
-        );
-      })
-    );
+        var copy = response.clone();
+        caches.open(CACHE_NAME).then(function (cache) {
+          cache.put(req, copy);
+        });
+        return response;
+      });
+    })
+  );
 });
 
-// 새 서비스 워커가 활성화될 때 이전 캐시 삭제
-self.addEventListener('activate', function(event) {
-  const cacheWhitelist = [CACHE_NAME];
-  
-  // 즉시 클라이언트 제어
+// ---------- 활성화: 옛 캐시 정리 ----------
+self.addEventListener('activate', function (event) {
   event.waitUntil(
-    caches.keys().then(function(cacheNames) {
-      return Promise.all(
-        cacheNames.map(function(cacheName) {
-          if (cacheWhitelist.indexOf(cacheName) === -1) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    }).then(function() {
-      return self.clients.claim();
-    })
+    caches.keys()
+      .then(function (names) {
+        return Promise.all(
+          names.map(function (name) {
+            if (name !== CACHE_NAME) return caches.delete(name);
+          })
+        );
+      })
+      .then(function () {
+        return self.clients.claim();
+      })
   );
 });
