@@ -72,7 +72,7 @@
 
       <table>
         <thead>
-          <tr><th>이메일</th><th>유튜브 닉네임</th><th>블로그 아이디</th><th>가입일</th><th>상태</th><th>작업</th></tr>
+          <tr><th>이메일</th><th>유튜브 계정</th><th>블로그 주소</th><th>가입일</th><th>상태</th><th>작업</th></tr>
         </thead>
         <tbody id="userTbody"></tbody>
       </table>
@@ -160,7 +160,7 @@
         "<div class='sub-provider'>" + (u.provider === "google" ? "구글 로그인" : "이메일 로그인") + "</div></td>" +
         "<td>" + (u.youtube ? escapeHtml(u.youtube) : "<span class='none'>미입력</span>") + "</td>" +
         "<td>" + (u.blog
-          ? "<a href='https://blog.naver.com/" + encodeURIComponent(u.blog) + "' target='_blank' rel='noopener'>" + escapeHtml(u.blog) + "</a>"
+          ? "<a href='" + escapeHtml(blogUrl(u.blog)) + "' target='_blank' rel='noopener'>" + escapeHtml(u.blog) + "</a>"
           : "<span class='none'>미입력</span>") + "</td>" +
         "<td>" + date + "</td>" +
         "<td><span class='badge " + (isApproved ? "approved" : "pending") + "'>" + (isApproved ? "승인됨" : "대기중") + "</span></td>" +
@@ -184,6 +184,15 @@
         });
       });
     });
+  }
+
+  // 블로그 입력값을 링크로 변환
+  // 전체 주소(http://, https://), 도메인만(blog.naver.com/id), 아이디만 모두 처리
+  function blogUrl(v) {
+    var s = String(v).trim();
+    if (/^https?:\/\//i.test(s)) return s;
+    if (s.indexOf("/") !== -1 || s.indexOf(".") !== -1) return "https://" + s;
+    return "https://blog.naver.com/" + encodeURIComponent(s);
   }
 
   function escapeHtml(str) {
