@@ -25,7 +25,7 @@ service cloud.firestore {
                         request.auth.uid == userId &&
                         request.resource.data.approved == resource.data.approved &&
                         request.resource.data.diff(resource.data)
-                          .affectedKeys().hasOnly(['youtube', 'blog', 'submitted', 'submittedAt']));
+                          .affectedKeys().hasOnly(['youtube', 'submitted', 'submittedAt']));
 
       allow delete: if isAdmin();
     }

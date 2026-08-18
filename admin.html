@@ -59,11 +59,10 @@
         <button id="logoutBtn">로그아웃</button>
       </div>
       <h1>사용자 승인 관리</h1>
-      <p class="sub">가입자가 입력한 닉네임을 구독자·이웃 목록과 대조한 뒤 승인하세요.</p>
+      <p class="sub">가입자가 입력한 유튜브 계정명을 구독자 목록과 대조한 뒤 승인하세요.</p>
 
       <div class="checklinks">
         <a class="yt" href="https://studio.youtube.com/channel/UCpenMdM1uD4KQqVgrsAmfjw/analytics/tab-build_audience" target="_blank" rel="noopener">유튜브 구독자 확인</a>
-        <a class="blog" href="https://admin.blog.naver.com/BuddyList.naver" target="_blank" rel="noopener">블로그 이웃 확인</a>
       </div>
 
       <div class="tabs">
@@ -75,7 +74,7 @@
 
       <table>
         <thead>
-          <tr><th>이메일</th><th>유튜브 계정</th><th>블로그 주소</th><th>가입일</th><th>상태</th><th>작업</th></tr>
+          <tr><th>이메일</th><th>유튜브 계정</th><th>가입일</th><th>상태</th><th>작업</th></tr>
         </thead>
         <tbody id="userTbody"></tbody>
       </table>
@@ -176,9 +175,6 @@
         "<td>" + escapeHtml(u.email || "-") +
         "<div class='sub-provider'>" + (u.provider === "google" ? "구글 로그인" : "이메일 로그인") + "</div></td>" +
         "<td>" + (u.youtube ? escapeHtml(u.youtube) : "<span class='none'>미입력</span>") + "</td>" +
-        "<td>" + (u.blog
-          ? "<a href='" + escapeHtml(blogUrl(u.blog)) + "' target='_blank' rel='noopener'>" + escapeHtml(u.blog) + "</a>"
-          : "<span class='none'>미입력</span>") + "</td>" +
         "<td>" + date + "</td>" +
         "<td>" + stateBadge + "</td>" +
         "<td>" +
@@ -203,15 +199,6 @@
         });
       });
     });
-  }
-
-  // 블로그 입력값을 링크로 변환
-  // 전체 주소(http://, https://), 도메인만(blog.naver.com/id), 아이디만 모두 처리
-  function blogUrl(v) {
-    var s = String(v).trim();
-    if (/^https?:\/\//i.test(s)) return s;
-    if (s.indexOf("/") !== -1 || s.indexOf(".") !== -1) return "https://" + s;
-    return "https://blog.naver.com/" + encodeURIComponent(s);
   }
 
   function escapeHtml(str) {
