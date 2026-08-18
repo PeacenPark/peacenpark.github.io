@@ -110,6 +110,9 @@
         <input type="email" id="signupEmail" placeholder="이메일" required autocomplete="email">
         <input type="password" id="signupPw" placeholder="비밀번호 (6자 이상)" required autocomplete="new-password" minlength="6">
         <input type="password" id="signupPw2" placeholder="비밀번호 확인" required autocomplete="new-password" minlength="6">
+        <div style="border-top:1px dashed #e3e3e3;margin:4px 0 2px;"></div>
+        <input type="text" id="signupYt" placeholder="본인 유튜브 계정 (구독하신 계정명)" required>
+        <input type="text" id="signupBlog" placeholder="본인 블로그 주소 (예: blog.naver.com/아이디)" required>
         <button type="submit" class="btn-primary">가입 신청</button>
       </form>
 
@@ -124,9 +127,9 @@
 
     <!-- 승인 대기 / 로그인 후 상태 -->
     <div id="statusView" class="status-box">
-      <div class="icon">⏳</div>
-      <h2>승인 대기중입니다</h2>
-      <p style="margin-bottom:16px;">가입 신청이 접수되었습니다.<br>아래를 완료해주시면 확인 후 승인해드립니다. (보통 하루 이내)</p>
+      <div class="icon" id="statusIcon">⏳</div>
+      <h2 id="statusTitle">승인 대기중입니다</h2>
+      <p id="statusDesc" style="margin-bottom:16px;">가입 신청이 접수되었습니다.<br>아래를 완료해주시면 확인 후 승인해드립니다. (보통 하루 이내)</p>
 
       <div class="guide">
         <div class="g-title">승인 조건</div>
@@ -149,7 +152,7 @@
         <input type="text" id="blogId" placeholder="예: blog.naver.com/아이디" required>
       </div>
       <div id="saveMsg"></div>
-      <button id="saveBtn" class="btn-save" type="button">저장하고 승인 요청</button>
+      <button id="saveBtn" class="btn-save" type="button">가입 완료하고 승인 요청</button>
       <p class="note" style="font-size:11.5px;color:#8a8a8a;line-height:1.6;margin:0 0 16px;">
         두 항목 모두 입력해야 승인 요청이 접수됩니다.<br>
         대조를 위해 실제 사용하신 계정 정보를 정확히 입력해주세요.<br>
@@ -213,14 +216,28 @@
     var email = document.getElementById("signupEmail").value.trim();
     var pw = document.getElementById("signupPw").value;
     var pw2 = document.getElementById("signupPw2").value;
+    var yt = document.getElementById("signupYt").value.trim();
+    var blog = document.getElementById("signupBlog").value.trim();
+
     if (pw !== pw2) {
       showMsg("비밀번호가 일치하지 않습니다.", "error");
       return;
     }
+    if (!yt) {
+      showMsg("본인 유튜브 계정을 입력해주세요.", "error");
+      document.getElementById("signupYt").focus();
+      return;
+    }
+    if (!blog) {
+      showMsg("본인 블로그 주소를 입력해주세요.", "error");
+      document.getElementById("signupBlog").focus();
+      return;
+    }
+
     showMsg("가입 처리 중...", "info");
     auth.createUserWithEmailAndPassword(email, pw)
       .then(function (cred) {
-        return createUserDoc(cred.user, "password");
+        return createUserDoc(cred.user, "password", yt, blog);
       })
       .catch(function (err) {
         handleAuthError(err, email, "signup");
@@ -234,7 +251,9 @@
       .then(function (result) {
         var isNew = result.additionalUserInfo && result.additionalUserInfo.isNewUser;
         if (isNew) {
-          return createUserDoc(result.user, "google");
+          // 구글 로그인은 입력 폼을 거치지 않으므로 정보 미입력 상태로 생성
+          // → 대기 화면에서 유튜브/블로그를 입력해야 최종 가입 완료
+          return createUserDoc(result.user, "google", "", "");
         }
       })
       .catch(function (err) {
@@ -242,13 +261,21 @@
       });
   });
 
-  function createUserDoc(user, provider) {
+  // submitted: 유튜브/블로그 정보까지 입력된 "최종 가입 완료" 여부
+  // false 이면 관리자 승인 목록에 올라가지 않습니다.
+  function createUserDoc(user, provider, yt, blog) {
+    var youtube = (yt || "").trim();
+    var blogAddr = (blog || "").trim();
+    var done = !!(youtube && blogAddr);
+
     return db.collection("users").doc(user.uid).set({
       email: user.email,
       provider: provider,
       approved: false,
-      youtube: "",
-      blog: "",
+      youtube: youtube,
+      blog: blogAddr,
+      submitted: done,
+      submittedAt: done ? firebase.firestore.FieldValue.serverTimestamp() : null,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
   }
@@ -290,17 +317,42 @@
 
     db.collection("users").doc(user.uid).update({
       youtube: ytVal,
-      blog: blogVal
+      blog: blogVal,
+      submitted: true,
+      submittedAt: firebase.firestore.FieldValue.serverTimestamp()
     }).then(function () {
-      saveMsg.textContent = "저장되었습니다. 확인 후 승인해드리겠습니다.";
+      saveMsg.textContent = "가입이 완료되었습니다. 확인 후 승인해드리겠습니다.";
       saveMsg.className = "ok";
       btn.disabled = false;
+      applyPendingState(true);
     }).catch(function (err) {
       saveMsg.textContent = "저장 실패: " + err.message;
       saveMsg.className = "error";
       btn.disabled = false;
     });
   });
+
+  // 대기 화면 상태 전환
+  //  submitted=false → "가입 미완료" (승인 요청이 아직 접수되지 않음)
+  //  submitted=true  → "승인 대기중"
+  function applyPendingState(submitted) {
+    var icon = document.getElementById("statusIcon");
+    var title = document.getElementById("statusTitle");
+    var desc = document.getElementById("statusDesc");
+    var btn = document.getElementById("saveBtn");
+
+    if (submitted) {
+      icon.textContent = "⏳";
+      title.textContent = "승인 대기중입니다";
+      desc.innerHTML = "승인 요청이 접수되었습니다.<br>확인 후 승인해드리겠습니다. (보통 하루 이내)";
+      btn.textContent = "입력 정보 수정";
+    } else {
+      icon.textContent = "📝";
+      title.textContent = "가입이 아직 완료되지 않았습니다";
+      desc.innerHTML = "아래 정보를 입력해야 <b>최종 가입 및 승인 요청</b>이 접수됩니다.<br>입력 전까지는 관리자에게 신청이 전달되지 않습니다.";
+      btn.textContent = "가입 완료하고 승인 요청";
+    }
+  }
 
   document.getElementById("logoutBtn").addEventListener("click", function () {
     auth.signOut();
@@ -369,6 +421,9 @@
         if (doc.exists) {
           document.getElementById("ytName").value = doc.data().youtube || "";
           document.getElementById("blogId").value = doc.data().blog || "";
+          applyPendingState(doc.data().submitted === true);
+        } else {
+          applyPendingState(false);
         }
       }
     });

@@ -27,6 +27,8 @@
   .badge{ padding:3px 9px; border-radius:12px; font-size:11px; font-weight:600; }
   .badge.pending{ background:#fff3cd; color:#946200; }
   .badge.approved{ background:#d4edda; color:#1e7e34; }
+  .badge.incomplete{ background:#eee; color:#888; }
+  .cnt{ font-size:11px; opacity:.85; }
   button.action{
     padding:6px 12px; border:none; border-radius:6px; font-size:12px; cursor:pointer; font-weight:600; margin-right:6px;
   }
@@ -65,7 +67,8 @@
       </div>
 
       <div class="tabs">
-        <div class="tab-btn active" data-filter="pending">승인 대기</div>
+        <div class="tab-btn active" data-filter="pending">승인 대기 <span class="cnt" id="cntPending"></span></div>
+        <div class="tab-btn" data-filter="incomplete">가입 미완료 <span class="cnt" id="cntIncomplete"></span></div>
         <div class="tab-btn" data-filter="approved">승인됨</div>
         <div class="tab-btn" data-filter="all">전체</div>
       </div>
@@ -138,8 +141,16 @@
   }
 
   function render() {
+    // 카운트 갱신
+    var pendingCnt = allUsers.filter(function (u) { return u.approved !== true && u.submitted === true; }).length;
+    var incompleteCnt = allUsers.filter(function (u) { return u.approved !== true && u.submitted !== true; }).length;
+    document.getElementById("cntPending").textContent = pendingCnt ? "(" + pendingCnt + ")" : "";
+    document.getElementById("cntIncomplete").textContent = incompleteCnt ? "(" + incompleteCnt + ")" : "";
+
     var list = allUsers.filter(function (u) {
-      if (currentFilter === "pending") return u.approved !== true;
+      // 승인 대기 = 정보 제출까지 끝난 건만 (미완료 건은 별도 탭)
+      if (currentFilter === "pending") return u.approved !== true && u.submitted === true;
+      if (currentFilter === "incomplete") return u.approved !== true && u.submitted !== true;
       if (currentFilter === "approved") return u.approved === true;
       return true;
     });
@@ -154,6 +165,12 @@
     tbody.innerHTML = list.map(function (u) {
       var date = u.createdAt && u.createdAt.toDate ? u.createdAt.toDate().toLocaleDateString("ko-KR") : "-";
       var isApproved = u.approved === true;
+      var isSubmitted = u.submitted === true;
+      var stateBadge = isApproved
+        ? "<span class='badge approved'>승인됨</span>"
+        : (isSubmitted
+            ? "<span class='badge pending'>대기중</span>"
+            : "<span class='badge incomplete'>가입 미완료</span>");
       return (
         "<tr>" +
         "<td>" + escapeHtml(u.email || "-") +
@@ -163,11 +180,13 @@
           ? "<a href='" + escapeHtml(blogUrl(u.blog)) + "' target='_blank' rel='noopener'>" + escapeHtml(u.blog) + "</a>"
           : "<span class='none'>미입력</span>") + "</td>" +
         "<td>" + date + "</td>" +
-        "<td><span class='badge " + (isApproved ? "approved" : "pending") + "'>" + (isApproved ? "승인됨" : "대기중") + "</span></td>" +
+        "<td>" + stateBadge + "</td>" +
         "<td>" +
         (isApproved
           ? "<button class='action revoke' data-id='" + u.id + "' data-op='revoke'>승인 취소</button>"
-          : "<button class='action approve' data-id='" + u.id + "' data-op='approve'>승인</button>") +
+          : (isSubmitted
+              ? "<button class='action approve' data-id='" + u.id + "' data-op='approve'>승인</button>"
+              : "<span class='none'>정보 입력 대기</span>")) +
         "</td>" +
         "</tr>"
       );
