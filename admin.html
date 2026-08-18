@@ -164,10 +164,10 @@
     tbody.innerHTML = list.map(function (u) {
       var date = u.createdAt && u.createdAt.toDate ? u.createdAt.toDate().toLocaleDateString("ko-KR") : "-";
       var isApproved = u.approved === true;
-      var isSubmitted = u.submitted === true;
+      var submitted = u.submitted === true;
       var stateBadge = isApproved
         ? "<span class='badge approved'>승인됨</span>"
-        : (isSubmitted
+        : (submitted
             ? "<span class='badge pending'>대기중</span>"
             : "<span class='badge incomplete'>가입 미완료</span>");
       return (
@@ -180,7 +180,7 @@
         "<td>" +
         (isApproved
           ? "<button class='action revoke' data-id='" + u.id + "' data-op='revoke'>승인 취소</button>"
-          : (isSubmitted
+          : (submitted
               ? "<button class='action approve' data-id='" + u.id + "' data-op='approve'>승인</button>"
               : "<span class='none'>정보 입력 대기</span>")) +
         "</td>" +
