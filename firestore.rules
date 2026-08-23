@@ -29,5 +29,23 @@ service cloud.firestore {
 
       allow delete: if isAdmin();
     }
+
+    // ── 앱 개선 요청 ─────────────────────────────────────────
+    // 승인된 사용자만 작성 가능. 목록 조회·수정·삭제는 관리자 전용.
+    // (작성자도 다른 사람의 제보를 볼 수 없습니다)
+    match /feedback/{docId} {
+      allow read: if isAdmin();
+
+      allow create: if request.auth != null &&
+                       request.resource.data.uid == request.auth.uid &&
+                       request.resource.data.status == '접수' &&
+                       request.resource.data.text is string &&
+                       request.resource.data.text.size() > 0 &&
+                       request.resource.data.text.size() <= 2000 &&
+                       // 승인된 사용자만 제보 가능
+                       get(/databases/$(database)/documents/users/$(request.auth.uid)).data.approved == true;
+
+      allow update, delete: if isAdmin();
+    }
   }
 }

@@ -29,6 +29,34 @@
   .badge.approved{ background:#d4edda; color:#1e7e34; }
   .badge.incomplete{ background:#eee; color:#888; }
   .cnt{ font-size:11px; opacity:.85; }
+
+  /* 섹션 전환 */
+  .section-nav{ display:flex; gap:8px; margin-bottom:18px; border-bottom:1px solid #e5e5e5; }
+  .sec-btn{ background:none; border:none; padding:10px 14px; font-size:14px; font-weight:600;
+    color:#999; cursor:pointer; border-bottom:2px solid transparent; font-family:inherit; }
+  .sec-btn.active{ color:var(--primary-color); border-color:var(--primary-color); }
+
+  /* 개선 요청 카드 */
+  .fb-card{ background:#fff; border-radius:10px; padding:16px; margin-bottom:10px;
+    box-shadow:0 2px 8px rgba(0,0,0,.06); }
+  .fb-head{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:8px; }
+  .fb-type{ padding:3px 9px; border-radius:12px; font-size:11px; font-weight:700; }
+  .fb-type.오류{ background:#fdecea; color:#c0392b; }
+  .fb-type.기능제안{ background:#e8f4fd; color:#1c6ea4; }
+  .fb-type.기타{ background:#f0f0f0; color:#666; }
+  .fb-page{ font-size:11px; color:#777; background:#f5f5f5; padding:3px 8px; border-radius:10px; }
+  .fb-date{ font-size:11px; color:#aaa; margin-left:auto; }
+  .fb-text{ font-size:13.5px; color:#333; line-height:1.65; white-space:pre-wrap;
+    word-break:break-word; margin-bottom:10px; }
+  .fb-meta{ font-size:11px; color:#999; margin-bottom:10px; }
+  .fb-foot{ display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+  .fb-foot select{ padding:6px 10px; border:1px solid #ddd; border-radius:6px; font-size:12px; }
+  .fb-del{ background:none; border:none; color:#c9c9c9; font-size:12px; cursor:pointer;
+    margin-left:auto; font-family:inherit; }
+  .fb-del:hover{ color:#d9534f; }
+  .st-접수{ color:#946200; font-weight:700; }
+  .st-처리중{ color:#1c6ea4; font-weight:700; }
+  .st-완료{ color:#1e7e34; font-weight:700; }
   button.action{
     padding:6px 12px; border:none; border-radius:6px; font-size:12px; cursor:pointer; font-weight:600; margin-right:6px;
   }
@@ -58,6 +86,12 @@
         <span id="adminEmail"></span>
         <button id="logoutBtn">로그아웃</button>
       </div>
+      <div class="section-nav">
+        <button class="sec-btn active" data-sec="users">👤 사용자 승인</button>
+        <button class="sec-btn" data-sec="feedback">💬 개선 요청 <span class="cnt" id="cntFeedback"></span></button>
+      </div>
+
+      <div id="sec-users">
       <h1>사용자 승인 관리</h1>
       <p class="sub">가입자가 입력한 유튜브 계정명을 구독자 목록과 대조한 뒤 승인하세요.</p>
 
@@ -79,6 +113,24 @@
         <tbody id="userTbody"></tbody>
       </table>
       <div id="empty" style="display:none;">해당하는 사용자가 없습니다.</div>
+      </div><!-- /sec-users -->
+
+      <div id="sec-feedback" style="display:none;">
+        <h1>앱 개선 요청</h1>
+        <p class="sub">사용자가 보낸 오류 제보와 기능 제안입니다. 처리 상태를 바꿔 관리할 수 있습니다.</p>
+
+        <div class="tabs">
+          <div class="tab-btn active" data-fbfilter="접수">접수 <span class="cnt" id="cntNew"></span></div>
+          <div class="tab-btn" data-fbfilter="처리중">처리중</div>
+          <div class="tab-btn" data-fbfilter="완료">완료</div>
+          <div class="tab-btn" data-fbfilter="all">전체</div>
+        </div>
+
+        <div id="fbList"></div>
+        <div id="fbEmpty" style="display:none;text-align:center;padding:40px 0;color:#999;font-size:13px;">
+          해당하는 요청이 없습니다.
+        </div>
+      </div><!-- /sec-feedback -->
     </div>
   </div>
 
@@ -112,15 +164,28 @@
     gate.style.display = "none";
     panel.style.display = "block";
     loadUsers();
+    loadFeedback();
+  });
+
+  // 섹션(사용자 승인 / 개선 요청) 전환
+  document.querySelectorAll(".sec-btn").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      document.querySelectorAll(".sec-btn").forEach(function (b) { b.classList.remove("active"); });
+      btn.classList.add("active");
+      var sec = btn.dataset.sec;
+      document.getElementById("sec-users").style.display = (sec === "users") ? "block" : "none";
+      document.getElementById("sec-feedback").style.display = (sec === "feedback") ? "block" : "none";
+    });
   });
 
   document.getElementById("logoutBtn").addEventListener("click", function () {
     auth.signOut().then(function () { location.href = "login.html"; });
   });
 
-  document.querySelectorAll(".tab-btn").forEach(function (btn) {
+  // 사용자 승인 섹션의 탭만 대상으로 (개선 요청 탭과 분리)
+  document.querySelectorAll("#sec-users .tab-btn").forEach(function (btn) {
     btn.addEventListener("click", function () {
-      document.querySelectorAll(".tab-btn").forEach(function (b) { b.classList.remove("active"); });
+      document.querySelectorAll("#sec-users .tab-btn").forEach(function (b) { b.classList.remove("active"); });
       btn.classList.add("active");
       currentFilter = btn.dataset.filter;
       render();
@@ -205,6 +270,111 @@
     var div = document.createElement("div");
     div.textContent = str;
     return div.innerHTML;
+  }
+
+  // ================= 앱 개선 요청 =================
+  var allFeedback = [];
+  var fbFilter = "접수";
+  var PAGE_NAMES = {
+    "cable2.html": "케이블 계산기",
+    "cable.html": "케이블 계산기",
+    "conduit-size.html": "전선관 굵기",
+    "voltage-drop.html": "전압 강하",
+    "moltal.html": "몰탈/기타",
+    "earth.html": "접지 계산기",
+    "index.html": "메인 화면",
+    "기타": "기타"
+  };
+
+  document.querySelectorAll("#sec-feedback [data-fbfilter]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      document.querySelectorAll("#sec-feedback [data-fbfilter]").forEach(function (b) { b.classList.remove("active"); });
+      btn.classList.add("active");
+      fbFilter = btn.dataset.fbfilter;
+      renderFeedback();
+    });
+  });
+
+  function loadFeedback() {
+    db.collection("feedback").orderBy("createdAt", "desc").onSnapshot(function (snap) {
+      allFeedback = snap.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()); });
+      renderFeedback();
+    }, function (err) {
+      console.error(err);
+      document.getElementById("fbList").innerHTML = "";
+      var e = document.getElementById("fbEmpty");
+      e.style.display = "block";
+      e.textContent = "요청 목록을 불러오지 못했습니다: " + err.message;
+    });
+  }
+
+  function renderFeedback() {
+    var newCnt = allFeedback.filter(function (f) { return (f.status || "접수") === "접수"; }).length;
+    document.getElementById("cntNew").textContent = newCnt ? "(" + newCnt + ")" : "";
+    document.getElementById("cntFeedback").textContent = newCnt ? "(" + newCnt + ")" : "";
+
+    var list = allFeedback.filter(function (f) {
+      if (fbFilter === "all") return true;
+      return (f.status || "접수") === fbFilter;
+    });
+
+    var wrap = document.getElementById("fbList");
+    var emptyEl = document.getElementById("fbEmpty");
+
+    if (list.length === 0) {
+      wrap.innerHTML = "";
+      emptyEl.style.display = "block";
+      emptyEl.textContent = "해당하는 요청이 없습니다.";
+      return;
+    }
+    emptyEl.style.display = "none";
+
+    wrap.innerHTML = list.map(function (f) {
+      var d = f.createdAt && f.createdAt.toDate
+        ? f.createdAt.toDate().toLocaleString("ko-KR", { dateStyle: "short", timeStyle: "short" })
+        : "-";
+      var type = f.type || "기타";
+      var status = f.status || "접수";
+      var pageLabel = f.page ? (PAGE_NAMES[f.page] || f.page) : "전체";
+
+      return (
+        '<div class="fb-card">' +
+          '<div class="fb-head">' +
+            '<span class="fb-type ' + escapeHtml(type) + '">' + escapeHtml(type) + "</span>" +
+            '<span class="fb-page">' + escapeHtml(pageLabel) + "</span>" +
+            '<span class="st-' + escapeHtml(status) + '">' + escapeHtml(status) + "</span>" +
+            '<span class="fb-date">' + d + "</span>" +
+          "</div>" +
+          '<div class="fb-text">' + escapeHtml(f.text || "") + "</div>" +
+          '<div class="fb-meta">보낸 사람: ' + escapeHtml(f.email || "-") + "</div>" +
+          '<div class="fb-foot">' +
+            '<select data-fbid="' + f.id + '" class="fb-status">' +
+              ["접수", "처리중", "완료"].map(function (s) {
+                return '<option value="' + s + '"' + (s === status ? " selected" : "") + ">" + s + "</option>";
+              }).join("") +
+            "</select>" +
+            '<button class="fb-del" data-fbid="' + f.id + '">삭제</button>' +
+          "</div>" +
+        "</div>"
+      );
+    }).join("");
+
+    wrap.querySelectorAll("select.fb-status").forEach(function (sel) {
+      sel.addEventListener("change", function () {
+        db.collection("feedback").doc(sel.dataset.fbid)
+          .update({ status: sel.value })
+          .catch(function (err) { alert("변경 실패: " + err.message); });
+      });
+    });
+
+    wrap.querySelectorAll("button.fb-del").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        if (!confirm("이 요청을 삭제할까요? 되돌릴 수 없습니다.")) return;
+        db.collection("feedback").doc(btn.dataset.fbid)
+          .delete()
+          .catch(function (err) { alert("삭제 실패: " + err.message); });
+      });
+    });
   }
 </script>
 </body>

@@ -87,8 +87,33 @@
       "text-decoration:none;border:none;font-family:inherit;}",
       "#acct-admin{background:#eaf2fd;color:#2b5596;font-weight:600;margin-bottom:7px;}",
       "#acct-admin:hover{background:#dbe9fb;}",
+      "#acct-feedback{background:#fff4e5;color:#a35b00;font-weight:600;margin-bottom:7px;}",
+      "#acct-feedback:hover{background:#ffe9cc;}",
       "#acct-logout{background:#f2f2f2;color:#555;font-weight:600;}",
-      "#acct-logout:hover{background:#e6e6e6;}"
+      "#acct-logout:hover{background:#e6e6e6;}",
+
+      /* 개선 요청 모달 */
+      "#fb-back{position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.45);",
+      "display:none;align-items:center;justify-content:center;padding:16px;",
+      "font-family:'Segoe UI','Noto Sans KR',sans-serif;}",
+      "#fb-back.open{display:flex;}",
+      "#fb-box{background:#fff;border-radius:14px;width:100%;max-width:420px;max-height:90vh;",
+      "overflow-y:auto;padding:22px;box-shadow:0 10px 40px rgba(0,0,0,.3);}",
+      "#fb-box h3{margin:0 0 4px;font-size:17px;color:#1e3a5f;}",
+      "#fb-box .fb-sub{margin:0 0 16px;font-size:12px;color:#888;line-height:1.5;}",
+      "#fb-box label{display:block;font-size:12px;font-weight:600;color:#555;margin:12px 0 5px;}",
+      "#fb-box select,#fb-box textarea{width:100%;box-sizing:border-box;padding:10px 12px;",
+      "border:1px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit;}",
+      "#fb-box textarea{min-height:120px;resize:vertical;line-height:1.5;}",
+      "#fb-box select:focus,#fb-box textarea:focus{outline:none;border-color:#4a90e2;}",
+      "#fb-msg{font-size:12.5px;min-height:18px;margin-top:10px;}",
+      "#fb-msg.ok{color:#1e7e34;} #fb-msg.err{color:#d9534f;}",
+      "#fb-actions{display:flex;gap:8px;margin-top:14px;}",
+      "#fb-actions button{flex:1;padding:11px;border:none;border-radius:8px;font-size:14px;",
+      "font-weight:600;cursor:pointer;font-family:inherit;}",
+      "#fb-send{background:#2b5596;color:#fff;} #fb-send:hover{background:#22467d;}",
+      "#fb-send:disabled{background:#9db3d4;cursor:default;}",
+      "#fb-cancel{background:#eee;color:#555;}"
     ].join("");
     document.head.appendChild(style);
 
@@ -104,6 +129,7 @@
     panel.innerHTML =
       '<div class="who">로그인 계정</div>' +
       '<div class="mail"></div>' +
+      '<button id="acct-feedback" type="button">💬 앱 개선 요청</button>' +
       (isAdmin ? '<a id="acct-admin" href="admin.html">사용자 승인 관리</a>' : "") +
       '<button id="acct-logout" type="button">로그아웃</button>';
     // 이메일은 textContent로 넣어 HTML 주입 방지
@@ -126,6 +152,114 @@
     document.getElementById("acct-logout").addEventListener("click", function () {
       auth.signOut().then(function () {
         location.replace("login.html");
+      });
+    });
+
+    // 개선 요청 모달 연결
+    buildFeedbackModal(user);
+    document.getElementById("acct-feedback").addEventListener("click", function () {
+      panel.classList.remove("open");
+      openFeedback();
+    });
+  }
+
+  // ---------- 앱 개선 요청 모달 ----------
+  var CALC_PAGES = [
+    ["", "선택 안 함 / 전체"],
+    ["cable2.html", "케이블 계산기"],
+    ["conduit-size.html", "전선관 굵기"],
+    ["voltage-drop.html", "전압 강하"],
+    ["moltal.html", "몰탈/기타"],
+    ["earth.html", "접지 계산기"],
+    ["기타", "기타 / 해당 없음"]
+  ];
+
+  function openFeedback() {
+    var back = document.getElementById("fb-back");
+    if (back) back.classList.add("open");
+  }
+
+  function buildFeedbackModal(user) {
+    var back = document.createElement("div");
+    back.id = "fb-back";
+
+    // 현재 페이지를 기본 선택값으로
+    var here = location.pathname.split("/").pop() || "";
+    var options = CALC_PAGES.map(function (p) {
+      var sel = (p[0] && p[0] === here) ? " selected" : "";
+      return '<option value="' + p[0] + '"' + sel + ">" + p[1] + "</option>";
+    }).join("");
+
+    back.innerHTML =
+      '<div id="fb-box">' +
+      "<h3>앱 개선 요청</h3>" +
+      '<p class="fb-sub">오류 제보나 필요한 기능을 남겨주시면 검토 후 반영하겠습니다.<br>보내주신 의견은 큰 도움이 됩니다. 감사합니다!</p>' +
+      '<label for="fb-type">유형</label>' +
+      '<select id="fb-type">' +
+      '<option value="오류">🐞 오류 / 계산 결과 이상</option>' +
+      '<option value="기능제안">💡 기능 제안</option>' +
+      '<option value="기타">💬 기타 의견</option>' +
+      "</select>" +
+      '<label for="fb-page">관련 계산기</label>' +
+      '<select id="fb-page">' + options + "</select>" +
+      '<label for="fb-text">내용 <span style="color:#d9534f;">*</span></label>' +
+      '<textarea id="fb-text" placeholder="어떤 상황에서 어떤 문제가 있었는지, 입력값과 함께 적어주시면 확인이 빠릅니다."></textarea>' +
+      '<div id="fb-msg"></div>' +
+      '<div id="fb-actions">' +
+      '<button id="fb-cancel" type="button">닫기</button>' +
+      '<button id="fb-send" type="button">보내기</button>' +
+      "</div>" +
+      "</div>";
+
+    document.body.appendChild(back);
+
+    function close() {
+      back.classList.remove("open");
+      document.getElementById("fb-msg").textContent = "";
+      document.getElementById("fb-msg").className = "";
+    }
+
+    back.addEventListener("click", function (e) {
+      if (e.target === back) close();
+    });
+    document.getElementById("fb-cancel").addEventListener("click", close);
+
+    document.getElementById("fb-send").addEventListener("click", function () {
+      var msg = document.getElementById("fb-msg");
+      var textEl = document.getElementById("fb-text");
+      var text = textEl.value.trim();
+      var sendBtn = this;
+
+      if (!text) {
+        msg.textContent = "내용을 입력해주세요.";
+        msg.className = "err";
+        textEl.focus();
+        return;
+      }
+
+      sendBtn.disabled = true;
+      msg.textContent = "전송 중...";
+      msg.className = "";
+
+      db.collection("feedback").add({
+        uid: user.uid,
+        email: user.email || "",
+        type: document.getElementById("fb-type").value,
+        page: document.getElementById("fb-page").value,
+        text: text,
+        status: "접수",
+        userAgent: navigator.userAgent,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(function () {
+        msg.textContent = "소중한 의견 감사합니다. 검토 후 반영하겠습니다.";
+        msg.className = "ok";
+        textEl.value = "";
+        sendBtn.disabled = false;
+        setTimeout(close, 1800);
+      }).catch(function (err) {
+        msg.textContent = "전송 실패: " + err.message;
+        msg.className = "err";
+        sendBtn.disabled = false;
       });
     });
   }
