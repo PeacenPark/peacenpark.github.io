@@ -744,10 +744,10 @@
                     차단기 선정 여유율
                     <span class="tooltip">
                       <span class="tooltip-icon">?</span>
-                      <span class="tooltip-text">설계전류(IB)에 곱해 차단기 정격(In)의 최소 기준을 구하는 여유율입니다. KEC 212.4.1의 IB≤In≤IZ 자체에는 여유율이 없지만, 한전·한국전기안전공사는 계약전력 심사 시 통상 1.2~1.25배의 여유를 반영해 표준 규격으로 올림합니다. 현장/관할 지사에 따라 다를 수 있으니 필요시 조정하세요.</span>
+                      <span class="tooltip-text">설계전류(IB)에 곱해 차단기 정격(In)의 최소 기준을 구하는 여유율입니다. KEC 212.4.1의 IB≤In≤IZ 자체에는 여유율이 없지만, 한전·한국전기안전공사는 계약전력 심사 시 이 여유율(예: 1.2배)을 반영해 표준 규격으로 올림합니다. 현장/관할 지사에 따라 다를 수 있으니 필요시 조정하세요.</span>
                     </span>
                   </label>
-                  <input type="number" id="breakerMargin" inputmode="decimal" pattern="[0-9]*" value="1.25" min="1" max="2" step="0.05">
+                  <input type="number" id="breakerMargin" inputmode="decimal" pattern="[0-9]*" value="1.2" min="1" max="2" step="0.05">
                 </div>
               </div>
 
@@ -950,6 +950,31 @@
               <input type="number" id="compareLength" inputmode="decimal" pattern="[0-9]*" placeholder="예: 100" min="1" step="1" required>
             </div>
           </div>
+
+          <div class="input-row">
+            <div class="input-group">
+              <label for="comparePF">
+                역률 (kW→A 환산용)
+                <span class="tooltip">
+                  <span class="tooltip-icon">?</span>
+                  <span class="tooltip-text">필요 부하를 kW로 입력했을 때 전류로 환산하는 역률입니다. 한전 계약전력 신청 시 통상 0.9(90%)를 기준으로 환산합니다.</span>
+                </span>
+              </label>
+              <input type="number" id="comparePF" inputmode="decimal" pattern="[0-9]*" value="0.9" min="0.5" max="1" step="0.01">
+            </div>
+
+            <div class="input-group">
+              <label for="compareBreakerMargin">
+                차단기 선정 여유율
+                <span class="tooltip">
+                  <span class="tooltip-icon">?</span>
+                  <span class="tooltip-text">설계전류(IB)에 곱해 차단기 정격(In)의 최소 기준을 구하는 여유율입니다. KEC 212.4.1의 IB≤In≤IZ 자체에는 여유율이 없지만, 한전·한국전기안전공사는 계약전력 심사 시 이 여유율(예: 1.2배)을 반영해 표준 규격으로 올림합니다.</span>
+                </span>
+              </label>
+              <input type="number" id="compareBreakerMargin" inputmode="decimal" pattern="[0-9]*" value="1.2" min="1" max="2" step="0.05">
+            </div>
+          </div>
+
           <div class="bottom">
           <button id="compareBtn">케이블 선정</button>
 			 </div>
@@ -1643,7 +1668,7 @@ function setupTabs() {
         const groupingFactor = parseFloat(document.getElementById('groupingFactor').value) || 1.0;
         const soilResistivity = parseFloat(document.getElementById('soilResistivity').value) || 1.5;
         const contractPF = parseFloat(document.getElementById('contractPF').value) || 0.9;
-        const breakerMargin = parseFloat(document.getElementById('breakerMargin').value) || 1.25;
+        const breakerMargin = parseFloat(document.getElementById('breakerMargin').value) || 1.2;
         
         if (!size || !method || !cores || !voltage) {
           document.getElementById('result').innerHTML = "<div class='warning'>모든 필수 항목을 선택해주세요.</div>";
@@ -2196,7 +2221,8 @@ const availableSizes = Object.keys(resistance['F-CV'])
         const loadInput = document.getElementById('compareCurrentNeeded');
         const loadUnit = document.getElementById('compareLoadUnit').value;
         const length = parseFloat(document.getElementById('compareLength').value);
-        const powerFactor = 0.9; // 기본 역률 값
+        const powerFactor = parseFloat(document.getElementById('comparePF').value) || 0.9;
+        const breakerMargin = parseFloat(document.getElementById('compareBreakerMargin').value) || 1.2;
 
         // 유효성 검사
         if (!loadInput.value || isNaN(length)) {
@@ -2205,16 +2231,21 @@ const availableSizes = Object.keys(resistance['F-CV'])
           return;
         }
 
-        // 부하 입력값을 전류로 변환 (kW 입력인 경우)
+        // 부하 입력값을 전류로 변환 (kW 입력인 경우) — 계약전력 환산이므로 역률을 반영합니다.
         let currentNeeded, originalInputValue;
         if (loadUnit === 'kW') {
           const powerValue = parseFloat(loadInput.value);
-          currentNeeded = convertPowerToCurrent(powerValue, voltageType);
+          currentNeeded = convertPowerToCurrent(powerValue, voltageType, powerFactor);
           originalInputValue = powerValue + ' kW';
         } else {
           currentNeeded = parseFloat(loadInput.value);
           originalInputValue = currentNeeded + ' A';
         }
+
+        // 차단기 정격(In) 선정용 최소 기준전류 = 설계전류(IB) × 여유율
+        // KEC 212.4.1 자체는 IB≤In≤IZ 이지만, 한전·한국전기안전공사는 계약전력 심사 시
+        // 여기에 안전율을 추가로 반영해 차단기를 표준 규격으로 올림합니다.
+        const ibForBreaker = currentNeeded * breakerMargin;
 
         // 전압 강하 기준치 (3.5% 이하 허용)
         const MAX_VOLTAGE_DROP_PERCENT = 3.5;
@@ -2268,14 +2299,17 @@ const availableSizes = Object.keys(resistance['F-CV'])
           voltageDropBased: {} // 전압 강하 기준 결과
         };
 
-        // 각 케이블 타입별 분석 (허용전류 = baseCurrent, 보정계수 미적용)
+        // 설치방법 보정계수 (관내 배선 등은 공기 중보다 허용전류가 낮아짐)
+        const compareInstallCoef = installFactor[installMethod] || 1.0;
+
+        // 각 케이블 타입별 분석 (허용전류 = baseCurrent × 설치방법 보정계수)
         for (const type in cableData) {
           const sizes = Object.keys(cableData[type]).map(Number).sort((a, b) => a - b);
-          
+
           // 1. 허용 전류 기준 최소 사이즈 찾기
           for (const size of sizes) {
-            const allowedCurrent = cableData[type][size]; // 최대 허용전류 그대로
-            
+            const allowedCurrent = Math.round(cableData[type][size] * compareInstallCoef * 10) / 10;
+
             if (allowedCurrent >= currentNeeded) {
               // 전압 강하 계산 (표시용)
               const R = resistance[type][size];
@@ -2300,8 +2334,8 @@ const availableSizes = Object.keys(resistance['F-CV'])
           
           // 2. 전압 강하 기준 최소 사이즈 찾기
           for (const size of sizes) {
-            const allowedCurrent = cableData[type][size]; // 최대 허용전류 그대로
-            
+            const allowedCurrent = Math.round(cableData[type][size] * compareInstallCoef * 10) / 10;
+
             if (allowedCurrent >= currentNeeded) {
               // 전압 강하 계산
               const R = resistance[type][size];
@@ -2328,10 +2362,10 @@ const availableSizes = Object.keys(resistance['F-CV'])
         }
 
         // 비교 테이블 헤더 업데이트 (입력 단위 표시)
-        let inputValueDisplay = '';
-        if (loadUnit === 'kW') {
-          inputValueDisplay = `<div class="sub">입력값: ${originalInputValue} (= ${currentNeeded.toFixed(1)}A)</div>`;
-        }
+        let inputValueDisplay = `<div class="sub">
+          ${loadUnit === 'kW' ? `입력값: ${originalInputValue} (설계전류 IB = ${currentNeeded.toFixed(1)}A, 역률 ${powerFactor})` : `설계전류(IB): ${currentNeeded.toFixed(1)}A`}<br>
+          차단기 선정 기준전류(IB×여유율 ${breakerMargin}): <strong>${ibForBreaker.toFixed(1)}A</strong> · 설치방법(${installMethod}) 보정계수 ${compareInstallCoef}
+        </div>`;
 
         // 테이블 생성 함수
         const createComparisonTable = (title, data, showVoltageDrop) => {
@@ -2362,7 +2396,7 @@ const availableSizes = Object.keys(resistance['F-CV'])
             <tr>
               <th>케이블 유형</th>
               <th>굵기 (㎟)</th>
-              <th>허용 전류 (A)</th>
+              <th>보정 허용전류 (A)<br><span style="font-weight:400;font-size:0.85em;">설치방법 반영</span></th>
               ${showVoltageDrop ? '<th>전압 강하 (%)</th>' : ''}
               <th>추천 차단기 (A)</th>
               <th>전력 용량 (kW)<br><span style="font-weight:400;font-size:0.85em;">전선 기준</span></th>
@@ -2376,8 +2410,8 @@ const availableSizes = Object.keys(resistance['F-CV'])
           
           for (const type in data) {
             const item = data[type];
-            // KEC 212.4.1 (IB ≤ In ≤ IZ) — 다른 탭과 동일한 공용 함수 사용
-            const bkSel = selectBreaker(item.current, currentNeeded);
+            // KEC 212.4.1 (IB ≤ In ≤ IZ) 에 여유율을 반영한 IB로 선정 — 다른 탭과 동일한 공용 함수 사용
+            const bkSel = selectBreaker(item.current, ibForBreaker);
 
             // 조건을 만족하는 규격이 없으면(부하~허용전류 사이에 표준 규격이 없는 구간)
             // 빈칸 대신 전선 보호 가능한 최대 정격을 참고값으로 보여주고 사유를 표시
@@ -2387,7 +2421,7 @@ const availableSizes = Object.keys(resistance['F-CV'])
               : (bkSel.maxAllowed !== null
                   ? `<span class="warning" title="${bkSel.message}">${bkSel.maxAllowed} <span style="font-size:0.8em;">▲</span></span>
                      <div style="font-size:0.78em;color:#c0392b;line-height:1.35;">
-                       부하 ${currentNeeded.toFixed(0)}A &gt; 차단기 ${bkSel.maxAllowed}A<br>
+                       설계전류(IB×여유율) ${ibForBreaker.toFixed(0)}A &gt; 차단기 ${bkSel.maxAllowed}A<br>
                        (트립됨 · 굵기 상향 필요)
                      </div>`
                   : `<span class="danger" title="${bkSel.message}">규격 없음</span>`);
@@ -2435,8 +2469,9 @@ const availableSizes = Object.keys(resistance['F-CV'])
           legend.className = 'reference';
           legend.style.cssText = 'margin-top:10px;font-size:0.85em;line-height:1.7;';
           legend.innerHTML =
-            '※ 차단기 선정 기준: KEC 212.4.1 — IB(부하전류) ≤ In(차단기 정격) ≤ IZ(전선 허용전류)<br>' +
-            '※ <span class="warning">▲ 표시</span> : 전선은 보호되지만 <b>부하전류가 차단기 정격보다 커서 차단기가 트립</b>되는 경우입니다. ' +
+            '※ 차단기 선정 기준: KEC 212.4.1(IB≤In≤IZ)에 여유율을 반영해, In ≥ IB×' + breakerMargin + ' 인 표준 규격으로 선정합니다.<br>' +
+            '※ 이 여유율은 KEC 212.4.1 자체 규정이 아니라, 한전·한국전기안전공사가 계약전력 심사 시 통상 반영하는 실무 기준입니다. 관할 지사·검사원에 따라 배수가 다를 수 있으니 위 입력란에서 조정하세요.<br>' +
+            '※ <span class="warning">▲ 표시</span> : 전선은 보호되지만 <b>설계전류(여유율 반영)가 차단기 정격보다 커서 차단기가 트립</b>되는 경우입니다. ' +
             '표시된 값은 그 전선을 보호할 수 있는 최대 정격이며, 그보다 큰 차단기는 전선을 태울 수 있어 쓸 수 없습니다. ' +
             '이 경우 전선 굵기를 한 단계 올려야 부하를 감당할 수 있습니다.<br>' +
             '※ 실사용 전력은 차단기 정격 기준이며, 연속부하는 정격의 80% 이하 운용을 권장합니다.';
