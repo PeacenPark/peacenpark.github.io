@@ -2303,7 +2303,10 @@ const availableSizes = Object.keys(resistance['F-CV'])
         const compareInstallCoef = installFactor[installMethod] || 1.0;
 
         // 전압 강하(%) 계산 헬퍼
-        function calcVoltageDropPercent(size) {
+        // (type을 인자로 받습니다 — 아래 for(const type in cableData) 루프 밖에서 정의된
+        //  함수라 그 loop의 type을 클로저로 볼 수 없어, 인자로 넘기지 않으면
+        //  "Can't find variable: type" 오류가 납니다)
+        function calcVoltageDropPercent(type, size) {
           const R = resistance[type][size];
           const X = reactance[size];
           let voltageDrop;
@@ -2328,7 +2331,7 @@ const availableSizes = Object.keys(resistance['F-CV'])
             const bkSel = selectBreaker(allowedCurrent, ibForBreaker);
 
             if (bkSel.rated !== null) {
-              const voltageDropPercent = calcVoltageDropPercent(size);
+              const voltageDropPercent = calcVoltageDropPercent(type, size);
               results.currentBased[type] = {
                 size: size,
                 current: allowedCurrent,
@@ -2346,7 +2349,7 @@ const availableSizes = Object.keys(resistance['F-CV'])
             const bkSel = selectBreaker(allowedCurrent, ibForBreaker);
             if (bkSel.rated === null) continue;
 
-            const voltageDropPercent = calcVoltageDropPercent(size);
+            const voltageDropPercent = calcVoltageDropPercent(type, size);
             if (voltageDropPercent <= MAX_VOLTAGE_DROP_PERCENT) {
               results.voltageDropBased[type] = {
                 size: size,
