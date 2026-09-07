@@ -625,6 +625,22 @@
         <div class="tab-content active" id="basic-tab">
           <div class="input-row">
             <div class="input-group">
+              <label for="cableTypeBasic">
+                전선 종류
+                <span class="tooltip">
+                  <span class="tooltip-icon">?</span>
+                  <span class="tooltip-text">전선(케이블)의 종류를 선택하세요. 허용전류 기준표가 종류별로 다릅니다. 한전 인입선은 대부분 CV(가교폴리에틸렌) 케이블입니다.</span>
+                </span>
+              </label>
+              <select id="cableTypeBasic">
+                <option value="CV">CV</option>
+                <option value="F-CV">F-CV (난연)</option>
+                <option value="HFIX">HFIX</option>
+                <option value="HIV">HIV</option>
+              </select>
+            </div>
+
+            <div class="input-group">
               <label for="cableSize">
                 전선 굵기 (㎟)
                 <span class="tooltip">
@@ -634,7 +650,7 @@
               </label>
               <select id="cableSize"></select>
             </div>
-            
+
             <div class="input-group">
               <label for="voltageType">
                 전원 종류
@@ -708,6 +724,30 @@
                       <option value="kW">전력(kW)</option>
                     </select>
                   </div>
+                </div>
+              </div>
+
+              <div class="input-row">
+                <div class="input-group">
+                  <label for="contractPF">
+                    역률 (kW→A 환산용)
+                    <span class="tooltip">
+                      <span class="tooltip-icon">?</span>
+                      <span class="tooltip-text">예상 부하를 kW로 입력했을 때 전류로 환산하는 데 쓰는 역률입니다. 한전에 계약전력(증설)을 신청할 때 통상 90%(0.9)를 기준으로 환산합니다. 실측 전류를 알고 있다면 단위를 A로 바꿔 직접 입력하세요.</span>
+                    </span>
+                  </label>
+                  <input type="number" id="contractPF" inputmode="decimal" pattern="[0-9]*" value="0.9" min="0.5" max="1" step="0.01">
+                </div>
+
+                <div class="input-group">
+                  <label for="breakerMargin">
+                    차단기 선정 여유율
+                    <span class="tooltip">
+                      <span class="tooltip-icon">?</span>
+                      <span class="tooltip-text">설계전류(IB)에 곱해 차단기 정격(In)의 최소 기준을 구하는 여유율입니다. KEC 212.4.1의 IB≤In≤IZ 자체에는 여유율이 없지만, 한전·한국전기안전공사는 계약전력 심사 시 통상 1.2~1.25배의 여유를 반영해 표준 규격으로 올림합니다. 현장/관할 지사에 따라 다를 수 있으니 필요시 조정하세요.</span>
+                    </span>
+                  </label>
+                  <input type="number" id="breakerMargin" inputmode="decimal" pattern="[0-9]*" value="1.25" min="1" max="2" step="0.05">
                 </div>
               </div>
 
@@ -1039,6 +1079,11 @@
     
     // 각 케이블 타입별 전선 굵기에 따른 허용 전류 데이터
     const cableData = {
+      CV: {
+        "1.5": 18, "2.5": 24, "4": 32, "6": 41, "10": 57, "16": 76, "25": 101,
+        "35": 125, "50": 150, "70": 192, "95": 232, "120": 269, "150": 309,
+        "185": 353, "240": 415, "300": 472, "400": 545, "500": 614, "600": 690
+      },
       HFIX: {
         "1.5": 15, "2.5": 21, "4": 28, "6": 36, "10": 50, "16": 68, "25": 89,
         "35": 112, "50": 138, "70": 175, "95": 210, "120": 245
@@ -1147,12 +1192,17 @@
       setupTabs();
       
       // 탭 굵기 목록 초기화
-      updateCableOptions(null, 'cableSize');
+      updateCableOptions('cableTypeBasic', 'cableSize');
       updateCoreOptions(null, 'coreCount');
       updateCableOptions(null, 'vdCableSize');
-      
+
+      // 전선 종류를 바꾸면 굵기 목록도 그 종류의 허용전류표로 갱신
+      document.getElementById('cableTypeBasic').addEventListener('change', () => {
+        updateCableOptions('cableTypeBasic', 'cableSize');
+      });
+
       // 이벤트 리스너 등록
-      
+
       // 고급 설정 토글
       document.querySelector('.toggle-advanced').addEventListener('click', toggleAdvancedOptions);
       
@@ -1389,18 +1439,21 @@
     }
     
     // 전력(kW)을 전류(A)로 변환
-    function convertPowerToCurrent(power, voltageType) {
+    // pf: 역률 (0<pf≤1). 미지정 시 1.0 — 케이블 이론 용량(kW) 등 순수 환산에 사용.
+    // 계약전력을 실제 설계전류(IB)로 환산할 때는 한전 실무 관행상 0.9를 권장.
+    function convertPowerToCurrent(power, voltageType, pf) {
       const voltageVal = voltageType === "단상" ? 220 : voltageType === "삼상" ? 380 : 110;
+      const powerFactor = (typeof pf === 'number' && isFinite(pf) && pf > 0 && pf <= 1) ? pf : 1;
       let current;
-      
+
       if (voltageType === "단상") {
-        current = (power * 1000) / voltageVal;
+        current = (power * 1000) / (voltageVal * powerFactor);
       } else if (voltageType === "삼상") {
-        current = (power * 1000) / (Math.sqrt(3) * voltageVal);
+        current = (power * 1000) / (Math.sqrt(3) * voltageVal * powerFactor);
       } else { // 직류
         current = (power * 1000) / voltageVal;
       }
-      
+
       return current;
     }
     
@@ -1464,15 +1517,22 @@ function setupTabs() {
     // 굵기 옵션 업데이트 (F-CV 기준 고정)
     function updateCableOptions(typeId, sizeId) {
       const sizeSelect = document.getElementById(sizeId);
+      const prevValue = sizeSelect.value;
       sizeSelect.innerHTML = "";
-      const sizes = Object.keys(cableData['F-CV']).map(Number).sort((a, b) => a - b);
+      const type = (typeId && document.getElementById(typeId)) ? document.getElementById(typeId).value : 'F-CV';
+      const sizes = Object.keys(cableData[type] || cableData['F-CV']).map(Number).sort((a, b) => a - b);
       sizes.forEach(size => {
         const option = document.createElement('option');
         option.value = size;
         option.textContent = `${size} ㎟`;
         sizeSelect.appendChild(option);
       });
-      sizeSelect.selectedIndex = 0;
+      // 이전에 선택했던 굵기가 새 전선 종류에도 있으면 유지
+      if (prevValue && sizes.includes(Number(prevValue))) {
+        sizeSelect.value = prevValue;
+      } else {
+        sizeSelect.selectedIndex = 0;
+      }
     }
     
     // 코어 옵션 업데이트 (1~4C 고정)
@@ -1582,14 +1642,17 @@ function setupTabs() {
         const parallelCount = document.getElementById('parallelCount').value;
         const groupingFactor = parseFloat(document.getElementById('groupingFactor').value) || 1.0;
         const soilResistivity = parseFloat(document.getElementById('soilResistivity').value) || 1.5;
+        const contractPF = parseFloat(document.getElementById('contractPF').value) || 0.9;
+        const breakerMargin = parseFloat(document.getElementById('breakerMargin').value) || 1.25;
         
         if (!size || !method || !cores || !voltage) {
           document.getElementById('result').innerHTML = "<div class='warning'>모든 필수 항목을 선택해주세요.</div>";
           return;
         }
         
-        // 허용전류: F-CV 기준 고정
-        const baseCurrent = cableData['F-CV'][size];
+        // 허용전류: 선택한 전선 종류의 표 기준
+        const cableType = document.getElementById('cableTypeBasic').value;
+        const baseCurrent = cableData[cableType][size];
         
         // 보정 계수 적용
         const installCoef = installFactor[method];
@@ -1617,13 +1680,20 @@ function setupTabs() {
         if (hasLoad) {
           if (loadUnit === 'kW') {
             const powerValue = parseFloat(loadInput.value);
-            actualLoad = convertPowerToCurrent(powerValue, voltage);
+            // 계약전력(kW) → 설계전류(IB) 환산은 역률(기본 0.9)을 반영합니다.
+            // (역률 1.0으로 계산하면 한전·전기안전공사가 실제 심사에 쓰는 값보다 낮게 나옵니다)
+            actualLoad = convertPowerToCurrent(powerValue, voltage, contractPF);
             originalInputValue = powerValue + ' kW';
           } else {
             actualLoad = parseFloat(loadInput.value);
             originalInputValue = actualLoad + ' A';
           }
         }
+
+        // 차단기 정격(In) 선정용 최소 기준전류 = 설계전류(IB) × 여유율
+        // KEC 212.4.1 자체는 IB≤In≤IZ 이지만, 한전·한국전기안전공사는 계약전력 심사 시
+        // 여기에 안전율(통상 1.2~1.25배)을 추가로 반영해 차단기를 표준 규격으로 올림합니다.
+        const ibForBreaker = hasLoad ? actualLoad * breakerMargin : null;
         
         // 가능 전력량은 항상 보정 후 허용 전류 기준
         const contractPower = convertCurrentToPower(correctedCurrent, voltage);
@@ -1631,12 +1701,11 @@ function setupTabs() {
         // 부하 전류가 허용 전류 초과 시 경고 및 추천 (부하 입력 시에만)
         let loadWarning = '';
         if (hasLoad && actualLoad > correctedCurrent) {
-          // 적합한 케이블 크기 찾기
-          // F-CV 기준으로 적합 굵기 탐색
-          const fcvSizes = Object.keys(cableData['F-CV']).map(Number).sort((a, b) => a - b);
+          // 적합한 케이블 크기 찾기 (선택한 전선 종류 기준으로 탐색)
+          const typeSizes = Object.keys(cableData[cableType]).map(Number).sort((a, b) => a - b);
           let recSize = null, recCurrent = null;
-          for (const s of fcvSizes) {
-            const corrected = cableData['F-CV'][s] * installCoef * coreCoef * tempCoef * parallelCoef * groupingFactor * soilCoef;
+          for (const s of typeSizes) {
+            const corrected = cableData[cableType][s] * installCoef * coreCoef * tempCoef * parallelCoef * groupingFactor * soilCoef;
             if (corrected >= actualLoad) { recSize = s; recCurrent = corrected; break; }
           }
           
@@ -1654,16 +1723,16 @@ function setupTabs() {
           `;
         }
         
-        // 차단기 계산: KEC 212.4.1 (IB ≤ In ≤ IZ) — 공용 함수 사용
-        const bkSel = selectBreaker(correctedCurrent, hasLoad ? actualLoad : null);
+        // 차단기 계산: KEC 212.4.1 (IB ≤ In ≤ IZ) 에 여유율을 반영한 IB로 선정 — 공용 함수 사용
+        const bkSel = selectBreaker(correctedCurrent, ibForBreaker);
         const optBreaker = bkSel.rated;
         const rec80 = bkSel.rec80;
 
         let breakerText;
         if (optBreaker) {
           breakerText = `<span class="success">${optBreaker} A</span>
-            <div class="sub">- IN ≤ 허용전류(${correctedCurrent}A) 조건 충족</div>
-            ${hasLoad ? `<div class="sub">- 부하전류(${actualLoad.toFixed(1)}A) 이상 최소 규격</div>` : `<div class="sub">- 허용전류 이하 최대 규격</div>`}
+            <div class="sub">- In ≤ 허용전류(${correctedCurrent}A) 조건 충족</div>
+            ${hasLoad ? `<div class="sub">- 설계전류(${actualLoad.toFixed(1)}A) × 여유율 ${breakerMargin} = ${ibForBreaker.toFixed(1)}A 이상 최소 규격</div>` : `<div class="sub">- 허용전류 이하 최대 규격</div>`}
             ${rec80 ? `<div class="sub">- 연속부하 권장(80%): ${rec80} A</div>` : ''}`;
         } else {
           breakerText = `<span class="danger">${bkSel.message}</span>`;
@@ -1694,8 +1763,8 @@ function setupTabs() {
           <div class="result-section">
             <h2>입력 정보</h2>
             <div class="result-row">
-              <div class="result-label">전선 굵기:</div>
-              <div class="result-value">${size} ㎟</div>
+              <div class="result-label">전선 종류/굵기:</div>
+              <div class="result-value">${cableType} ${size} ㎟</div>
             </div>
             <div class="result-row">
               <div class="result-label">설치 방법:</div>
@@ -1760,12 +1829,13 @@ function setupTabs() {
             
             ${hasLoad ? `
             <div class="result-row">
-              <div class="result-label">③ 입력된 부하:</div>
+              <div class="result-label">③ 설계전류(IB):</div>
               <div class="result-value">
                 <span class="highlight">${actualLoad.toFixed(1)} A</span>
                 ${loadUnit === 'kW'
-                  ? `<div class="sub">입력값: ${originalInputValue}</div>`
+                  ? `<div class="sub">입력값: ${originalInputValue} (역률 ${contractPF} 적용)</div>`
                   : `<div class="sub">환산: ${convertCurrentToPower(actualLoad, voltage).toFixed(1)} kW</div>`}
+                <div class="sub">차단기 선정 기준(IB×여유율 ${breakerMargin}): <strong>${ibForBreaker.toFixed(1)} A</strong></div>
               </div>
             </div>
             ` : ''}
@@ -1825,11 +1895,14 @@ function setupTabs() {
           </div>
           
           <div class="reference">
-            <strong>[KEC 기준 참고]</strong><br>
+            <strong>[기준 참고]</strong><br>
             - 허용 전류: KEC 2021 표 3.2.1 기준<br>
             - 접지선 산정: 16㎟ 이하 동일, 16~35㎟는 16㎟, 35㎟ 초과는 1/2<br>
-            - 차단기: 전선 기준 허용 전류의 125% 이하<br>
-            ${method === '지중' ? '- 지중 설치: 토양 열저항에 따른 보정 계수 적용' : ''}
+            - 차단기(KEC 212.4.1): In ≤ 전선 허용전류(IZ), 또한 IB ≤ In<br>
+            ${hasLoad ? `- 이 계산에서는 IB(설계전류)에 여유율 ${breakerMargin}배를 반영해 In의 최소값을 정했습니다. KEC 212.4.1 자체에는 이 여유율이 없지만, 한전·한국전기안전공사가 계약전력 심사 시 통상 적용하는 실무 기준을 반영한 것입니다. 실제 요구 배수는 관할 지사·검사원에 따라 1.2~1.25배 사이에서 다를 수 있으니 신청 전 확인하세요.<br>` : ''}
+            ${loadUnit === 'kW' && hasLoad ? `- 계약전력(kW)→전류(A) 환산 시 역률 ${contractPF}을 적용했습니다. 한전 실무에서는 통상 역률 90%를 기준으로 환산합니다.<br>` : ''}
+            ${method === '지중' ? '- 지중 설치: 토양 열저항에 따른 보정 계수 적용<br>' : ''}
+            - 위 보정 후 허용전류(IZ)는 설치방법·코어수 등 KEC 일반 배선 기준 보정계수를 적용한 값입니다. 한전 인입선(가공/지중 서비스드롭)은 별도 규격·허용전류표를 쓰는 경우가 있어 실제 현장 규격과 다를 수 있으니, 최종 규격은 담당 검사원과 반드시 재확인하세요.
           </div>
         `;
         
@@ -2429,6 +2502,7 @@ const availableSizes = Object.keys(resistance['F-CV'])
         id: Date.now(),
         date: new Date().toLocaleString(),
 
+        cableType: document.getElementById('cableTypeBasic').value,
         cableSize: document.getElementById('cableSize').value,
         installMethod: document.getElementById('installMethod').value,
         voltageType: document.getElementById('voltageType').value,
@@ -2438,7 +2512,9 @@ const availableSizes = Object.keys(resistance['F-CV'])
         temperature: document.getElementById('temperature').value,
         parallelCount: document.getElementById('parallelCount').value,
         groupingFactor: document.getElementById('groupingFactor').value,
-        soilResistivity: document.getElementById('soilResistivity').value
+        soilResistivity: document.getElementById('soilResistivity').value,
+        contractPF: document.getElementById('contractPF').value,
+        breakerMargin: document.getElementById('breakerMargin').value
       };
       
       // 이름 입력 받기
@@ -2555,9 +2631,12 @@ const availableSizes = Object.keys(resistance['F-CV'])
       // 기본 설정 적용
       
       // 케이블 옵션 업데이트
-      updateCableOptions(null, 'cableSize');
+      if (config.cableType) {
+        document.getElementById('cableTypeBasic').value = config.cableType;
+      }
+      updateCableOptions('cableTypeBasic', 'cableSize');
       updateCoreOptions(null, 'coreCount');
-      
+
       // 나머지 설정 적용
       document.getElementById('cableSize').value = config.cableSize;
       document.getElementById('installMethod').value = config.installMethod;
@@ -2575,6 +2654,8 @@ const availableSizes = Object.keys(resistance['F-CV'])
       document.getElementById('parallelCount').value = config.parallelCount;
       document.getElementById('groupingFactor').value = config.groupingFactor;
       document.getElementById('soilResistivity').value = config.soilResistivity;
+      if (config.contractPF) document.getElementById('contractPF').value = config.contractPF;
+      if (config.breakerMargin) document.getElementById('breakerMargin').value = config.breakerMargin;
       
       // 고급 설정 부분이 닫혀있다면 열기
       const advancedContent = document.querySelector('.advanced-content');
