@@ -2189,6 +2189,7 @@ const availableSizes = Object.keys(resistance['F-CV'])
       compareBtn.disabled = true;
       
       setTimeout(() => {
+       try {
         // 입력값 가져오기
         const voltageType = document.getElementById('compareVoltageType').value;
         const installMethod = document.getElementById('compareInstallMethod').value;
@@ -2196,18 +2197,14 @@ const availableSizes = Object.keys(resistance['F-CV'])
         const loadUnit = document.getElementById('compareLoadUnit').value;
         const length = parseFloat(document.getElementById('compareLength').value);
         const powerFactor = 0.9; // 기본 역률 값
-        
+
         // 유효성 검사
         if (!loadInput.value || isNaN(length)) {
           document.getElementById('compareResult').style.display = 'block';
           document.getElementById('compareResult').innerHTML = "<div class='warning' style='padding: 15px;'>필요 부하와 케이블 길이를 입력해주세요.</div>";
-          
-          // 버튼 원상 복구
-          compareBtn.innerHTML = originalBtnText;
-          compareBtn.disabled = false;
           return;
         }
-        
+
         // 부하 입력값을 전류로 변환 (kW 입력인 경우)
         let currentNeeded, originalInputValue;
         if (loadUnit === 'kW') {
@@ -2234,7 +2231,15 @@ const availableSizes = Object.keys(resistance['F-CV'])
         const sinPhi = Math.sqrt(1 - powerFactor * powerFactor);
 
         // 케이블 저항값 (Ohm/km)
+        // ※ 도체(구리) 단면적에 따른 값이라 CV/F-CV는 동일 단면적이면 사실상 같은 값을 씁니다.
+        //   (아래 for...in cableData 루프가 CV 타입도 도는데, 이 표에 CV가 없으면
+        //    resistance['CV'][size]에서 예외가 나서 계산하기 버튼이 무한 로딩에 빠집니다)
         const resistance = {
+          CV: {
+            "1.5": 12.1, "2.5": 7.41, "4": 4.61, "6": 3.08, "10": 1.83, "16": 1.15, "25": 0.727,
+            "35": 0.524, "50": 0.387, "70": 0.268, "95": 0.193, "120": 0.153, "150": 0.124,
+            "185": 0.0991, "240": 0.0754, "300": 0.0601, "400": 0.0470, "500": 0.0366, "600": 0.0283
+          },
           HFIX: {
             "1.5": 12.1, "2.5": 7.41, "4": 4.61, "6": 3.08, "10": 1.83, "16": 1.15, "25": 0.727,
             "35": 0.524, "50": 0.387, "70": 0.268, "95": 0.193, "120": 0.153
@@ -2483,18 +2488,27 @@ const availableSizes = Object.keys(resistance['F-CV'])
         
         tableBody.innerHTML = '';
         tableBody.appendChild(resultsContainer);
-        
-        // 버튼 원상 복구
-        compareBtn.innerHTML = originalBtnText;
-        compareBtn.disabled = false;
-        
+
         // 결과 영역으로 스크롤
         setTimeout(() => {
           document.getElementById('compareResult').scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 100);
+       } catch (err) {
+        // 계산 중 예상치 못한 오류가 나도 버튼이 "계산 중..."에 멈춰 있지 않도록
+        // 여기서 잡아서 사용자에게 보여줍니다.
+        console.error('케이블 선정 계산 오류:', err);
+        document.getElementById('compareResult').style.display = 'block';
+        document.getElementById('compareResult').innerHTML =
+          `<div class="danger" style="padding:15px;">계산 중 오류가 발생했습니다: ${err.message}<br>` +
+          `입력값을 확인한 뒤 다시 시도해주세요. 문제가 계속되면 앱 개선 요청으로 알려주세요.</div>`;
+       } finally {
+        // 버튼 원상 복구 (정상/오류 어느 쪽이든 항상 복구)
+        compareBtn.innerHTML = originalBtnText;
+        compareBtn.disabled = false;
+       }
       }, 500);
     }
-    
+
     // 현재 설정 저장
     function saveCurrentConfig() {
       // 저장할 설정 데이터 가져오기
