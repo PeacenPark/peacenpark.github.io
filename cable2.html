@@ -616,7 +616,7 @@
         <div class="tabs">
           <div class="tab active" data-tab="basic">기본 계산</div>
           <div class="tab" data-tab="voltage-drop">전압 강하</div>
-          <div class="tab" data-tab="compare">케이블 선정</div>
+          <div class="tab" data-tab="compare">케이블/차단기 선정</div>
           <div class="tab" data-tab="breaker-wire">차단기↔전선</div>
           <div class="tab" data-tab="saved">저장된 설정</div>
         </div>
@@ -976,12 +976,12 @@
           </div>
 
           <div class="bottom">
-          <button id="compareBtn">케이블 선정</button>
+          <button id="compareBtn">케이블/차단기 선정</button>
 			 </div>
           
           <div class="result" id="compareResult" style="display: none;">
-            <h2>케이블 선정 결과</h2>
-            <div class="sub">필요 전류 기준으로 가능한 케이블 옵션을 선정합니다.</div>
+            <h2>케이블/차단기 선정 결과</h2>
+            <div class="sub">전선(허용전류 IZ)과 차단기(IB×여유율 ≤ In ≤ IZ)를 동시에 만족하는 최소 규격을 선정합니다.</div>
             
             <div class="comparison-table-wrapper">
               <table class="comparison-table">
@@ -2302,61 +2302,60 @@ const availableSizes = Object.keys(resistance['F-CV'])
         // 설치방법 보정계수 (관내 배선 등은 공기 중보다 허용전류가 낮아짐)
         const compareInstallCoef = installFactor[installMethod] || 1.0;
 
+        // 전압 강하(%) 계산 헬퍼
+        function calcVoltageDropPercent(size) {
+          const R = resistance[type][size];
+          const X = reactance[size];
+          let voltageDrop;
+          if (voltageType === "단상") {
+            voltageDrop = 2 * currentNeeded * length * (R * powerFactor + X * sinPhi) / 1000;
+          } else {
+            voltageDrop = Math.sqrt(3) * currentNeeded * length * (R * powerFactor + X * sinPhi) / 1000;
+          }
+          return (voltageDrop / voltageVal) * 100;
+        }
+
         // 각 케이블 타입별 분석 (허용전류 = baseCurrent × 설치방법 보정계수)
+        // "선정 통과"의 기준은 전선(IZ)뿐 아니라 차단기(IB×여유율 ≤ In ≤ IZ)까지 동시에
+        // 만족하는 것이므로, 두 조건을 같이 만족하는 최소 사이즈를 찾습니다.
+        // (전선만 IB를 넘긴다고 통과가 아니라, 여유율까지 반영한 표준 차단기가 실제로 존재해야 통과)
         for (const type in cableData) {
           const sizes = Object.keys(cableData[type]).map(Number).sort((a, b) => a - b);
 
-          // 1. 허용 전류 기준 최소 사이즈 찾기
+          // 1. 전선+차단기를 함께 만족하는 최소 사이즈 찾기 (증설/승압 신청 시 최소 통과 기준)
           for (const size of sizes) {
             const allowedCurrent = Math.round(cableData[type][size] * compareInstallCoef * 10) / 10;
+            const bkSel = selectBreaker(allowedCurrent, ibForBreaker);
 
-            if (allowedCurrent >= currentNeeded) {
-              // 전압 강하 계산 (표시용)
-              const R = resistance[type][size];
-              const X = reactance[size];
-              let voltageDrop, voltageDropPercent;
-              
-              if (voltageType === "단상") {
-                voltageDrop = 2 * currentNeeded * length * (R * powerFactor + X * sinPhi) / 1000;
-              } else {
-                voltageDrop = Math.sqrt(3) * currentNeeded * length * (R * powerFactor + X * sinPhi) / 1000;
-              }
-              voltageDropPercent = (voltageDrop / voltageVal) * 100;
-              
+            if (bkSel.rated !== null) {
+              const voltageDropPercent = calcVoltageDropPercent(size);
               results.currentBased[type] = {
                 size: size,
                 current: allowedCurrent,
+                breaker: bkSel.rated,
+                rec80: bkSel.rec80,
                 voltageDropPercent: voltageDropPercent
               };
               break;
             }
           }
-          
-          // 2. 전압 강하 기준 최소 사이즈 찾기
+
+          // 2. 전압 강하 기준까지 함께 만족하는 최소 사이즈 찾기 (전선+차단기 통과 + 전압강하 3.5% 이하)
           for (const size of sizes) {
             const allowedCurrent = Math.round(cableData[type][size] * compareInstallCoef * 10) / 10;
+            const bkSel = selectBreaker(allowedCurrent, ibForBreaker);
+            if (bkSel.rated === null) continue;
 
-            if (allowedCurrent >= currentNeeded) {
-              // 전압 강하 계산
-              const R = resistance[type][size];
-              const X = reactance[size];
-              let voltageDrop, voltageDropPercent;
-              
-              if (voltageType === "단상") {
-                voltageDrop = 2 * currentNeeded * length * (R * powerFactor + X * sinPhi) / 1000;
-              } else {
-                voltageDrop = Math.sqrt(3) * currentNeeded * length * (R * powerFactor + X * sinPhi) / 1000;
-              }
-              voltageDropPercent = (voltageDrop / voltageVal) * 100;
-              
-              if (voltageDropPercent <= MAX_VOLTAGE_DROP_PERCENT) {
-                results.voltageDropBased[type] = {
-                  size: size,
-                  current: allowedCurrent,
-                  voltageDropPercent: voltageDropPercent
-                };
-                break;
-              }
+            const voltageDropPercent = calcVoltageDropPercent(size);
+            if (voltageDropPercent <= MAX_VOLTAGE_DROP_PERCENT) {
+              results.voltageDropBased[type] = {
+                size: size,
+                current: allowedCurrent,
+                breaker: bkSel.rated,
+                rec80: bkSel.rec80,
+                voltageDropPercent: voltageDropPercent
+              };
+              break;
             }
           }
         }
@@ -2410,28 +2409,19 @@ const availableSizes = Object.keys(resistance['F-CV'])
           
           for (const type in data) {
             const item = data[type];
-            // KEC 212.4.1 (IB ≤ In ≤ IZ) 에 여유율을 반영한 IB로 선정 — 다른 탭과 동일한 공용 함수 사용
-            const bkSel = selectBreaker(item.current, ibForBreaker);
+            // 이 표의 각 항목은 이미 선정 루프에서 "전선(IZ) + 차단기(IB×여유율≤In≤IZ)"를
+            // 동시에 만족하는 최소 사이즈로 걸러졌으므로, 선정 시 구한 breaker/rec80을 그대로 씁니다.
+            // (여기서 selectBreaker를 다시 계산하지 않아 선정 루프와 렌더링이 어긋날 일이 없습니다)
+            const breakerAmpForCalc = item.breaker;
+            const breakerCellHtml = `${item.breaker}`;
 
-            // 조건을 만족하는 규격이 없으면(부하~허용전류 사이에 표준 규격이 없는 구간)
-            // 빈칸 대신 전선 보호 가능한 최대 정격을 참고값으로 보여주고 사유를 표시
-            const breakerAmpForCalc = bkSel.rated !== null ? bkSel.rated : bkSel.maxAllowed;
-            const breakerCellHtml = bkSel.rated !== null
-              ? `${bkSel.rated}`
-              : (bkSel.maxAllowed !== null
-                  ? `<span class="warning" title="${bkSel.message}">${bkSel.maxAllowed} <span style="font-size:0.8em;">▲</span></span>
-                     <div style="font-size:0.78em;color:#c0392b;line-height:1.35;">
-                       설계전류(IB×여유율) ${ibForBreaker.toFixed(0)}A &gt; 차단기 ${bkSel.maxAllowed}A<br>
-                       (트립됨 · 굵기 상향 필요)
-                     </div>`
-                  : `<span class="danger" title="${bkSel.message}">규격 없음</span>`);
-            
             // 전력 용량 계산 (전선 허용전류 기준 - 이론값)
             const powerCapacity = convertCurrentToPower(item.current, voltageType);
 
             // 실사용 전력: 차단기 정격 기준 (전선이 굵어도 차단기가 상한이 됨)
-            const bkPower   = breakerAmpForCalc !== null ? convertCurrentToPower(breakerAmpForCalc, voltageType) : null;
-            const bkPower80 = breakerAmpForCalc !== null ? convertCurrentToPower(breakerAmpForCalc * 0.8, voltageType) : null;
+            // 80%는 별도 표준 규격(rec80)이 아니라 "선정된 차단기 정격의 80% 연속부하" 기준입니다.
+            const bkPower   = convertCurrentToPower(breakerAmpForCalc, voltageType);
+            const bkPower80 = convertCurrentToPower(breakerAmpForCalc * 0.8, voltageType);
             
             const row = document.createElement('tr');
             row.className = 'comparison-row';
@@ -2469,12 +2459,12 @@ const availableSizes = Object.keys(resistance['F-CV'])
           legend.className = 'reference';
           legend.style.cssText = 'margin-top:10px;font-size:0.85em;line-height:1.7;';
           legend.innerHTML =
-            '※ 차단기 선정 기준: KEC 212.4.1(IB≤In≤IZ)에 여유율을 반영해, In ≥ IB×' + breakerMargin + ' 인 표준 규격으로 선정합니다.<br>' +
+            '※ 표에 나온 굵기는 <b>전선(IZ)</b>과 <b>차단기(IB×여유율 ' + breakerMargin + ' ≤ In ≤ IZ, KEC 212.4.1)</b>를 ' +
+            '동시에 만족하는 <b>최소 규격</b>입니다 — 증설·승압 신청 시 실무에서 요구하는 최소 통과 기준과 같은 방식입니다.<br>' +
             '※ 이 여유율은 KEC 212.4.1 자체 규정이 아니라, 한전·한국전기안전공사가 계약전력 심사 시 통상 반영하는 실무 기준입니다. 관할 지사·검사원에 따라 배수가 다를 수 있으니 위 입력란에서 조정하세요.<br>' +
-            '※ <span class="warning">▲ 표시</span> : 전선은 보호되지만 <b>설계전류(여유율 반영)가 차단기 정격보다 커서 차단기가 트립</b>되는 경우입니다. ' +
-            '표시된 값은 그 전선을 보호할 수 있는 최대 정격이며, 그보다 큰 차단기는 전선을 태울 수 있어 쓸 수 없습니다. ' +
-            '이 경우 전선 굵기를 한 단계 올려야 부하를 감당할 수 있습니다.<br>' +
-            '※ 실사용 전력은 차단기 정격 기준이며, 연속부하는 정격의 80% 이하 운용을 권장합니다.';
+            '※ 전선 허용전류만으로는 통과해도 여유율을 반영하면 표준 차단기가 없는 구간(예: 60A와 75A 사이)이 있을 수 있어, ' +
+            '그런 경우 이 표는 자동으로 차단기까지 여유 있게 들어맞는 다음 굵기로 올려서 보여줍니다.<br>' +
+            '※ 실사용 전력은 선정된 차단기 정격 기준이며, 연속부하는 정격의 80% 이하 운용을 권장합니다.';
           container.appendChild(legend);
 
           return container;
@@ -2488,9 +2478,9 @@ const availableSizes = Object.keys(resistance['F-CV'])
         if (Object.keys(results.currentBased).length > 0) {
           resultsContainer.appendChild(
             createComparisonTable(
-              "허용 전류 기준 최소 케이블 사이즈",
+              "전선+차단기 동시 만족 최소 규격",
               results.currentBased,
-              true // 전압 강하율 표시 (경고용)
+              true // 전압 강하율 표시 (참고용)
             )
           );
         }
@@ -2499,7 +2489,7 @@ const availableSizes = Object.keys(resistance['F-CV'])
         if (Object.keys(results.voltageDropBased).length > 0) {
           resultsContainer.appendChild(
             createComparisonTable(
-              "전압 강하 기준 최소 케이블 사이즈 (3.5% 이하)",
+              "전선+차단기+전압강하(3.5% 이하) 모두 만족 최소 규격",
               results.voltageDropBased,
               true
             )
@@ -2511,12 +2501,13 @@ const availableSizes = Object.keys(resistance['F-CV'])
             Object.keys(results.voltageDropBased).length === 0) {
           resultsContainer.innerHTML = `
             <div class="no-results">
-              <p>조건을 만족하는 케이블이 없습니다.</p>
+              <p>전선+차단기 조건을 동시에 만족하는 케이블이 목록 내 굵기(최대 600㎟) 범위에서 없습니다.</p>
               <ul>
-                <li>필요 전류: ${currentNeeded.toFixed(1)}A 이상 ${loadUnit === 'kW' ? `(입력값: ${originalInputValue})` : ''}</li>
+                <li>설계전류(IB): ${currentNeeded.toFixed(1)}A ${loadUnit === 'kW' ? `(입력값: ${originalInputValue})` : ''}</li>
+                <li>차단기 선정 기준전류(IB×여유율 ${breakerMargin}): ${ibForBreaker.toFixed(1)}A 이상을 만족하는 표준 차단기가, 전선 허용전류(IZ) 이하 범위에 있어야 합니다</li>
                 <li>전압 강하: ${MAX_VOLTAGE_DROP_PERCENT}% 이하</li>
               </ul>
-              <p>더 큰 케이블 크기를 사용하거나 케이블 길이를 줄이세요.</p>
+              <p>더 큰 케이블 크기를 사용하거나, 케이블 길이를 줄이거나, 여유율/역률 값을 확인해보세요.</p>
             </div>
           `;
         }
