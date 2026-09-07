@@ -9,7 +9,7 @@
 // 캐시 버전(CACHE_NAME)은 이제 매번 올릴 필요가 없습니다.
 // 아이콘 등 정적 리소스를 교체했을 때만 숫자를 올리세요.
 // ============================================================
-const CACHE_NAME = 'electric-calculator-v10';
+const CACHE_NAME = 'electric-calculator-v11';
 
 // 오프라인 대비용으로 미리 받아두는 파일들
 const urlsToCache = [
